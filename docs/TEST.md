@@ -382,8 +382,8 @@ Add `-v` only if you also want to discard the monitoring databases.
 | Item | Why | How to test it |
 |---|---|---|
 | `scripts/firewall-rules.sh --apply` | test host is Windows; needs live iptables | Linux VM: dry-run, then `--apply` with a console you can recover from |
-| `scripts/MoonlightWebService.ps1 install` | no NSSM and no Windows build on the test host | Windows host with the MSVC build + NSSM (see `docs/DEPLOY.md`) |
-| Windows x64 build | no MSVC/Qt toolchain here | `cmd /c backend\build_msvc.bat` on Windows |
+| `scripts/MoonlightWebService.ps1 install` | NSSM 2.24 is present on this host, but there is no Windows binary to install yet | once the MSVC build exists: `scripts/MoonlightWebService.ps1 install` (see `docs/DEPLOY.md`) |
+| Windows x64 build | MSVC 2019 Build Tools (14.29) + SDK 10.0.19041 are present; **Qt 6 and OpenSSL dev are not** | install a Qt 6 MSVC kit + OpenSSL, then `cmd /c backend\build_msvc.bat` |
 | Real WebRTC streaming | needs a Moonlight/Sunshine host and a browser | pair a host, start a stream, check media |
 | Host networking from the Windows host | Docker Desktop host networking is the VM's | deploy on Linux and `curl https://<host>:8443`; for UI testing only, the sidecar in §2.1 |
 

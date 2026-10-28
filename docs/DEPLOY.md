@@ -265,6 +265,44 @@ server {
 
 WebSocket upgrade headers matter: the signalling channel upgrades.
 
+### 6.1 Admin page through a proxy
+
+Through a proxy every visitor's TCP peer is loopback, so the "am I the host
+machine?" test needs a second condition, and the code has one
+(`RequestGuard.cpp:278`):
+
+```cpp
+d.localPrivilege = ctx.peerLocal && isLocalHostName(hostHeader);
+```
+
+A request is treated as coming from the host only when the peer is one of this
+machine's own addresses **and** the `Host` header names a local host
+(`localhost`, `127.0.0.1`, `::1`, or a private/loopback IP literal —
+`RequestGuard.cpp:143`). Under `https://moonlight.example.com` the second
+condition is false, so the Admin page shows its **password unlock** prompt. That
+is correct, not a fault. A reverse proxy does not and must not turn the admin
+page into a local one.
+
+Because `Host` carries that weight, one proxy mistake is worth naming: **never
+rewrite `Host` to a loopback name.** `proxy_set_header Host 127.0.0.1:8443;`
+(a common shortcut when an upstream complains about the hostname) would make
+every proxied visitor pass `isLocalHostName` and hand out the admin page with no
+password. Pass the browser's `Host` through, as both examples above do.
+
+`X-Forwarded-For` is not trusted for the local decision either: the client
+address is taken from `cf-connecting-ip`, else the last `X-Forwarded-For` entry,
+else `Forwarded` (`AuthManager.cpp:397`), so a remote client stays remote even
+though the socket came from loopback. Keep those headers set by the edge only —
+Caddy and nginx both overwrite a client-supplied value, which is what the
+application expects.
+
+Consequences worth knowing:
+
+- Set the admin password before relying on the proxy:
+  `docker exec -i moonlightweb moonlightweb --set-admin-password`.
+- Keep `Host` and `X-Forwarded-Proto` as in the examples; the page derives links
+  from them.
+
 ---
 
 ## 7. Monitoring (host and containers)

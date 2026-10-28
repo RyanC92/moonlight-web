@@ -100,6 +100,11 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
 - `README.md`'s Docker section points at the hardened variant and its docs. The
   upstream quick-start remains as-is.
 
+- `docs/DEPLOY.md` §6.1 explains the admin page behind a reverse proxy: the
+  local-privilege test needs a local peer **and** a local `Host`, so the password
+  prompt is the correct behaviour there, and rewriting `Host` to a loopback name
+  would hand out admin without a password.
+
 ### Fixed
 
 - **The admin page could not be unlocked from a remote browser.**
