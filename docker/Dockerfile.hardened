@@ -1,0 +1,139 @@
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
+# =============================================================================
+#  MoonlightWeb — hardened container image.
+#
+#  A hardened variant of the official Dockerfile. What is actually different:
+#
+#    • Runtime stage starts from a minimal `slim` base: no compilers, no
+#      package lists, no `sudo`, no package manager tooling.
+#    • Non-root user `moonlightweb` (uid/gid allocated by the base image).
+#    • Listens on 8080/8443. A non-root process cannot bind <1024 reliably, so
+#      the image does not pretend it can; put a reverse proxy in front for 443.
+#    • A hardened entrypoint: validates the port variables, seeds
+#      `remote_admin_enabled=false`, keeps a security event log and rotates
+#      oversized logs.
+#
+#  What is NOT in the image, deliberately:
+#
+#    • No seccomp profile. Docker's built-in default applies. A hand-written
+#      allowlist that nobody has validated against Qt/WebRTC breaks the app.
+#    • No security-config.json. The application reads settings.json; a second
+#      config file nothing parses is decoration, not hardening.
+#    • No logrotate cron. The entrypoint rotates a log that outgrows 100 MB.
+#
+#  The rest of the hardening (read-only rootfs, cap_drop ALL, no-new-privileges,
+#  tmpfs, resource limits) is deploy-time policy and lives in
+#  docker/docker-compose.hardened.yml, where it can be reviewed.
+#
+#  Build:
+#    docker build -f docker/Dockerfile.hardened -t moonlightweb-hardened:latest .
+#
+#  Run:
+#    docker compose -f docker/docker-compose.hardened.yml up -d
+# =============================================================================
+ARG DEBIAN_RELEASE=trixie
+
+# ── Build stage ────────────────────────────────────────────────────────────────
+FROM debian:${DEBIAN_RELEASE} AS build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        git \
+        ninja-build \
+        pkg-config \
+        libssl-dev \
+        qt6-base-dev \
+        qt6-websockets-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG MW_VERSION=""
+ARG MW_DOMAIN=""
+ARG MW_PDNS_TOKEN=""
+
+WORKDIR /src
+COPY backend backend
+COPY frontend frontend
+
+# CMake reads MW_DOMAIN/MW_PDNS_TOKEN from the *environment* (backend/CMakeLists
+# line ~544) and MW_VERSION from the command line. Exporting the two empty
+# arguments is harmless: the CMake guard skips empty values.
+RUN MW_DOMAIN="${MW_DOMAIN}" MW_PDNS_TOKEN="${MW_PDNS_TOKEN}" \
+    cmake -S backend -B /tmp/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DMW_VERSION="${MW_VERSION}" \
+    && cmake --build /tmp/build -j "$(nproc)" \
+    && cmake --install /tmp/build --prefix /stage \
+    && rm -rf /tmp/build
+
+# ── Runtime stage ──────────────────────────────────────────────────────────────
+FROM debian:${DEBIAN_RELEASE}-slim AS runtime
+
+# Runtime dependencies only. `curl` and `jq` are used by the entrypoint and by
+# the documented health checks; everything else is Qt.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        jq \
+        libqt6svg6 \
+        libqt6websockets6 \
+        libqt6widgets6 \
+        qt6-qpa-plugins \
+        tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root application user. HOME points at the volume so Qt's AppDataLocation
+# and QSettings both land in persistent storage.
+#
+# The uid/gid are PINNED. `useradd -r` allocates the next free id from the
+# distribution's range, so adding or removing a package that ships a system user
+# silently changes it — and a rebuild then no longer owns its own /data volume.
+# Observed exactly that: 997:996 before, 999:999 after removing two packages.
+RUN groupadd -g 10001 moonlightweb \
+    && useradd -u 10001 -g moonlightweb -d /data -s /sbin/nologin moonlightweb \
+    && mkdir -p /data \
+    && chown -R 10001:10001 /data
+
+# Copy built application
+COPY --from=build /stage /opt/moonlightweb
+COPY docker/entrypoint-secure.sh /usr/local/bin/entrypoint-secure.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Make entrypoints executable
+RUN chmod +x /usr/local/bin/entrypoint-secure.sh /usr/local/bin/entrypoint.sh \
+    && ln -sf /opt/moonlightweb/MoonlightWeb /usr/local/bin/moonlightweb \
+    && ln -sf /usr/local/bin/entrypoint-secure.sh /usr/local/bin/entrypoint
+
+# Environment variables with security defaults. Only variables the application
+# actually reads are set here; see docker/docker-compose.hardened.yml for why.
+ENV HOME=/data \
+    LANG=C.UTF-8 \
+    XDG_RUNTIME_DIR=/tmp/runtime-moonlightweb \
+    QT_QPA_PLATFORM=offscreen \
+    MW_SERVICE=1 \
+    MW_LAN_ONLY=1 \
+    MW_HTTP_PORT=8080 \
+    MW_HTTPS_PORT=8443
+
+VOLUME ["/data"]
+
+# Documentation only — EXPOSE publishes nothing. 8443 is the web UI and the
+# signalling upgrade, 8080 the plain-HTTP listener; the UDP block carries WebRTC
+# media, one port per stream slot (48550 + slot). Non-root, so both TCP ports
+# are above 1024. Full table: docker/README.md.
+EXPOSE 8443/tcp 8080/tcp 47999/udp 48550-48573/udp
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD moonlightweb --status > /dev/null || exit 1
+
+# Security hardening at runtime
+USER moonlightweb:moonlightweb
+
+# Use hardened entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint-secure.sh"]
+CMD []

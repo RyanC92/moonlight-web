@@ -1,0 +1,107 @@
+# =============================================================================
+#  MoonlightWeb — hardened compose file (host networking).
+#
+#      docker compose -f docker/docker-compose.hardened.yml up -d
+#      docker compose -f docker/docker-compose.hardened.yml exec moonlightweb moonlightweb --status
+#
+#  Host networking is REQUIRED, exactly as in docker/docker-compose.yml:
+#
+#    • WebRTC binds an ephemeral UDP port per stream slot; an ephemeral port
+#      cannot be published in advance, so a bridge breaks media.
+#    • mDNS discovery (UDP 5353) and SSDP/UPnP are multicast and do not cross
+#      the default bridge.
+#
+#  A hardened *bridge* variant exists (docker-compose.bridge.yml) but trades
+#  away discovery and can force WebRTC onto TCP. Hardening is layered on top of
+#  the supported layout here instead of replacing it.
+#
+#  What this file adds over docker-compose.yml:
+#    - no-new-privileges (blocks setuid escalation)
+#    - read-only root filesystem + tmpfs for /tmp, /run
+#    - all capabilities dropped (the non-root user binds high ports)
+#    - CPU/memory limits so a compromised process cannot exhaust the host
+#    - security env defaults (LAN-only, no remote admin unlock)
+#    - bounded json-file logging
+# =============================================================================
+services:
+  moonlightweb:
+    image: moonlightweb-hardened:latest
+    container_name: moonlightweb
+    restart: unless-stopped
+    network_mode: host
+
+    # ── Capability hardening ────────────────────────────────────────────────
+    # The non-root user binds 8080/8443, so no capability is needed at all.
+    # (Binding 80/443 as non-root would need NET_BIND_SERVICE delivered to a
+    # non-root process, which Docker does not do reliably, or a file capability,
+    # which no-new-privileges deliberately disables. Front the container with a
+    # reverse proxy for 443 instead — see docs/DEPLOY.md.)
+    cap_drop: ["ALL"]
+
+    security_opt:
+      - no-new-privileges:true
+
+    # ── Filesystem hardening ────────────────────────────────────────────────
+    # State lives on the /data volume; nothing else needs to be writable.
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+      - /run:size=32m,mode=755
+    # WebRTC/SCTP buffers live in /dev/shm; the 64 MB default is tight for
+    # 1080p60 with several stream slots.
+    shm_size: 256m
+
+    # ── Resource limits ─────────────────────────────────────────────────────
+    # Bounds on CPU and memory so a compromised process cannot exhaust the
+    # host. Generous enough for 1080p60 encoding, tight enough to leave the
+    # host breathing.
+    cpus: "2.0"
+    mem_limit: 2g
+    pids_limit: 512
+
+    # ── Environment hardening ───────────────────────────────────────────────
+    # Only variables this codebase actually reads. The app emits CSP, HSTS,
+    # X-Frame-Options, X-Content-Type-Options and Referrer-Policy itself; it
+    # rate-limits connections and auth attempts with built-in limits; there is
+    # no env toggle for those and none is claimed here.
+    environment:
+      TZ: Etc/UTC
+      # Refuse Internet Access entirely (Edition.cpp reads this at runtime).
+      MW_LAN_ONLY: "1"
+      # Listener ports, deliberately above 1024 so the non-root user needs no
+      # capability. Front with a reverse proxy (Caddy/nginx) to serve 443.
+      # The entrypoint writes both into settings.json before the server starts.
+      MW_HTTP_PORT: "8080"
+      MW_HTTPS_PORT: "8443"
+      # UPnP is deliberately OFF. It needs SSDP multicast, which only arrives on
+      # the host network — but MW_LAN_ONLY already refuses Internet Access, and
+      # the app logs that UPnP is off. Set this to "1" only after clearing
+      # MW_LAN_ONLY and running `moonlightweb --enable-internet`.
+      MW_UPNP: "0"
+
+    # ── Volumes ─────────────────────────────────────────────────────────────
+    # settings.json, cert/, logs, paired hosts and the client identity.
+    volumes:
+      - mw-data:/data
+
+    # ── Health check ────────────────────────────────────────────────────────
+    # `--status` answers only once the TLS listener is up, so an unhealthy
+    # container really is one nothing can connect to.
+    healthcheck:
+      test: ["CMD", "moonlightweb", "--status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+    stop_grace_period: 30s
+
+    # ── Logging ─────────────────────────────────────────────────────────────
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mw-data:

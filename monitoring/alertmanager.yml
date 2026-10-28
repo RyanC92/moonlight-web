@@ -1,0 +1,35 @@
+# =============================================================================
+#  Alertmanager configuration.
+#
+#  The receivers below are placeholders on purpose: no webhook URL or routing
+#  key is invented here. Replace them before relying on alerts, or alerts are
+#  accepted by Alertmanager and silently dropped at delivery.
+#
+#  A receiver with no valid endpoint still lets `promtool check config` and the
+#  Alertmanager UI work, which is enough to verify routing locally.
+# =============================================================================
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: ["alertname", "instance"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - severity = critical
+      receiver: default
+      continue: false
+
+receivers:
+  - name: default
+    # Uncomment and fill in one of these to actually deliver alerts.
+    # webhook_configs:
+    #   - url: "https://example.invalid/alerts"
+    #     send_resolved: true
+    # slack_configs:
+    #   - api_url: "https://hooks.slack.com/services/REPLACE/ME"
+    #     channel: "#alerts"
+    #     send_resolved: true

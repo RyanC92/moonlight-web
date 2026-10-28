@@ -1,0 +1,70 @@
+# =============================================================================
+#  Alert rules — only metrics that actually exist in this stack.
+#
+#  Deliberately absent: failed-login rates, certificate expiry and throughput
+#  alerts. Those need an application metrics endpoint, which MoonlightWeb does
+#  not expose (see prometheus.yml). Claiming them here would produce rules that
+#  never fire.
+# =============================================================================
+groups:
+  - name: host
+    rules:
+      - alert: HostHighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory above 90% for 10 minutes"
+          description: "Available memory is {{ $value | humanizePercentage }} exhausted on {{ $labels.instance }}."
+
+      - alert: HostHighCpuUsage
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU above 90% for 10 minutes"
+          description: "CPU utilisation is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+      - alert: HostDiskFillingUp
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.10
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Root filesystem below 10% free"
+          description: "{{ $labels.mountpoint }} on {{ $labels.instance }} has {{ $value | humanizePercentage }} free."
+
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "node-exporter is not answering"
+          description: "Host metrics have been unavailable for 5 minutes."
+
+  - name: containers
+    rules:
+      # container_last_seen stops advancing when the container is gone and
+      # cadvisor no longer sees it.
+      - alert: MoonlightWebContainerGone
+        expr: time() - container_last_seen{name="moonlightweb"} > 300
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MoonlightWeb container is not visible to cAdvisor"
+          description: "The moonlightweb container has not been seen for 5 minutes."
+
+      - alert: MoonlightWebMemoryHigh
+        expr: |
+          sum(container_memory_working_set_bytes{name="moonlightweb"})
+            / sum(container_spec_memory_limit_bytes{name="moonlightweb"}) > 0.90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MoonlightWeb near its memory limit"
+          description: "Working set is above 90% of the configured limit."

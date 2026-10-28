@@ -1,0 +1,114 @@
+# =============================================================================
+#  Monitoring stack for the MoonlightWeb host.
+#
+#      docker compose -f docker/docker-compose.monitoring.yml up -d
+#      docker compose -f docker/docker-compose.monitoring.yml ps
+#
+#  Grafana       http://localhost:3000   (admin / admin on first login)
+#  Prometheus    http://localhost:9090
+#  Alertmanager  http://localhost:9093
+#
+#  Scope: host and container metrics only. MoonlightWeb exposes no Prometheus
+#  endpoint; see monitoring/prometheus.yml.
+#
+#  All three UIs bind to localhost by default. Change the published address to
+#  e.g. "3000:3000" only if you intend to expose them, and put them behind the
+#  same TLS/authentication you use for MoonlightWeb.
+# =============================================================================
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: mw-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.listen-address=0.0.0.0:9090
+    volumes:
+      - ./../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./../monitoring/rules:/etc/prometheus/rules:ro
+      - prom-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: mw-alertmanager
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./../monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    security_opt:
+      - no-new-privileges:true
+
+  # Host metrics. Needs the host root mounted read-only; `pid: host` lets it
+  # read host process statistics. No `:rslave` propagation: Docker Desktop
+  # refuses it ("path / is mounted on / but it is not a shared or slave mount"),
+  # and without it the exporter still sees every filesystem that already exists.
+  # The only thing lost is filesystems mounted *after* start, which is not a
+  # concern for a long-running monitoring sidecar.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: mw-node-exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro
+    security_opt:
+      - no-new-privileges:true
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: mw-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    security_opt:
+      - no-new-privileges:false
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "2" }
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: mw-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  prom-data:
+  alertmanager-data:
+  grafana-data:

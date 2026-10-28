@@ -5,6 +5,14 @@ Official images for Linux servers, NAS boxes and mini PCs, built from the
 (`debian:trixie`), published to the GitHub Container Registry for
 **`linux/amd64`** and **`linux/arm64`**.
 
+> **Hardened variant in this fork.** [`Dockerfile.hardened`](Dockerfile.hardened)
+> and [`docker-compose.hardened.yml`](docker-compose.hardened.yml) run the app
+> non-root on **8080/8443**, with a read-only root filesystem, all capabilities
+> dropped, `no-new-privileges`, resource limits and a security event log. See
+> [`docs/DEPLOY.md`](../docs/DEPLOY.md) and
+> [`docs/HARDENING.md`](../docs/HARDENING.md). Everything below describes the
+> upstream image and continues to apply to it.
+
 ---
 
 ## Quick start — headless Linux server (Ubuntu x64, Debian, a VM, a NUC)

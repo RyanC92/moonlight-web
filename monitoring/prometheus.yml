@@ -1,0 +1,48 @@
+# =============================================================================
+#  Prometheus configuration for the MoonlightWeb host.
+#
+#  SCOPE, stated plainly: MoonlightWeb itself does not expose a Prometheus
+#  metrics endpoint (/metrics returns the SPA index). This stack therefore
+#  monitors the *host and the containers*, which is what can be observed
+#  truthfully today:
+#
+#    - node-exporter : host CPU, memory, disk, filesystem, network
+#    - cadvisor      : per-container CPU, memory, restart/last-seen
+#    - prometheus    : self-scrape
+#
+#  If an application metrics endpoint is added later, add a `moonlightweb` job
+#  here and application-level rules in rules/security.rules.yml.
+#
+#  Run: docker compose -f docker/docker-compose.monitoring.yml up -d
+# =============================================================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: moonlightweb
+    stack: hardened
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: host
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          service: containers

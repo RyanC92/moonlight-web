@@ -286,6 +286,12 @@ Compose files: [`docker/docker-compose.yml`](docker/docker-compose.yml) (host ne
 [`docker/docker-compose.bridge.yml`](docker/docker-compose.bridge.yml) (published ports, with
 caveats).
 
+> **Hardened variant in this fork:** [`docker/Dockerfile.hardened`](docker/Dockerfile.hardened)
+> with [`docker/docker-compose.hardened.yml`](docker/docker-compose.hardened.yml) runs
+> non-root on **8080/8443** with a read-only root filesystem, all capabilities dropped,
+> `no-new-privileges`, resource limits and a security event log. See
+> [`docs/DEPLOY.md`](docs/DEPLOY.md) and [`docs/HARDENING.md`](docs/HARDENING.md).
+
 > ⚠️ **Set a PIN and an admin password.** A container never sees a local browser, so without
 > them the page stays behind the login wall and the admin page cannot be opened.
 
