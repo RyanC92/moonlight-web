@@ -280,6 +280,12 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   `domain`. The two defects listed under "Fixed" were found by this run.
 - `MW_DOMAIN` handling in the entrypoint: `sh -n` clean, and the applied value
   appears in `settings.json` as `domain` after `up -d`.
+- The public visitor surface, with the app reached from a non-loopback peer under
+  its trusted name: `/api/hosts` `401`, `/api/admin/token` `403`, `/api/health`
+  and `/api/server/hostname` `200`; with a PIN session, `/api/admin/token`
+  answers `{}` and an admin write is `403`. Three consecutive wrong PINs produce
+  the 30 s lockout (`429 rate_limited` even for the correct PIN), and it clears.
+  Procedure and expected output in `docs/TEST.md` §6.4.
 
 ### Not verified
 

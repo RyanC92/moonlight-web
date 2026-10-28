@@ -283,6 +283,56 @@ The file's mtime must move and the log must show the validation followed by the
 unlock. This is the check that would have caught the `AdminView._isLocalhost()`
 defect described in `docs/BACKLOG.md`.
 
+### 6.4 What a public visitor can reach
+
+The bench's `socat` sidecar reaches the app from a container address, so the app
+sees a **non-loopback peer** — a public visitor as far as `RequestGuard` is
+concerned. Point the requests at the app's trusted name to simulate the edge
+(`jq '.domain="mw.test"' settings.json`, restart, `Host: mw.test`):
+
+```powershell
+$h = "Host: mw.test"; $u = "https://localhost:18443"
+curl.exe -ks -o NUL -H $h -w "hosts        -> %{http_code}`n" $u/api/hosts
+curl.exe -ks -o NUL -H $h -w "admin/token  -> %{http_code}`n" $u/api/admin/token
+curl.exe -ks -o NUL -H $h -w "health       -> %{http_code}`n" $u/api/health
+curl.exe -ks -o NUL -H $h -w "hostname     -> %{http_code}`n" $u/api/server/hostname
+```
+
+Expected before any PIN: `401`, `403`, `200`, `200`. Only the health probe, the
+pre-login hostname and `/api/auth/*` are public; everything else needs a session
+and `/api/admin/token` refuses to hand out a key to an anonymous caller.
+
+With a PIN session, the same visitor still cannot write:
+
+```powershell
+curl.exe -ks -b $jar -H $h -H "Content-Type: application/json" -X POST `
+  --data-binary "@$body" $u/api/admin/password -w "`nHTTP %{http_code}`n"
+curl.exe -ks -b $jar -H $h $u/api/admin/token
+```
+
+Expected: `403 Only available from localhost` and `{}` — no `token` field. The
+key is only issued to the host machine or to a session promoted with the admin
+password, and promotion from a public address is refused by
+`AuthManager::canUnlockAdmin` (asserted in `backend/tests/test_auth_manager.cpp`:
+`canUnlockAdmin("8.8.8.8", true, false) == false`).
+
+Brute-force tiers, three consecutive wrong PINs then the valid one:
+
+```
+{"error":"invalid_pin","lockout_seconds":30,"remaining":2}
+{"error":"rate_limited","lockout_seconds":30}
+{"error":"rate_limited","lockout_seconds":29}
+```
+
+The valid PIN is refused during the lockout and accepted once it expires
+(`200`, `pin_regenerated: true`). Failures reset on a success, which is why the
+counter must be counted from the last successful login, not from the first probe.
+
+**What this does not cover.** The `socat` peer is a private address, so it looks
+like a LAN machine, not an internet one: `admin_unlock_available` is `true` here
+and would be `false` for a real public source. That difference is enforced in
+`canUnlockAdmin` and unit-tested; it is not exercised end to end on this bench.
+
 ---
 
 ## 7. Security scan
