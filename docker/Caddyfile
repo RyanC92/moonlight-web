@@ -1,0 +1,63 @@
+# =============================================================================
+#  MoonlightWeb — public entry point (Caddy).
+#
+#  Terminates TLS for $MW_DOMAIN and forwards to the app on 127.0.0.1:8080.
+#
+#  The loopback hop is load-bearing, not a default:
+#
+#    • HttpServer skips its HTTP→HTTPS redirect when the peer is local and the
+#      Host is a public name, precisely because that is what a TLS-terminating
+#      tunnel looks like (HttpServer.cpp, "Exception 1"). A proxy reached over
+#      the network instead would be redirected to :8443 and break.
+#    • AuthManager trusts X-Forwarded-For / CF-Connecting-IP only when the
+#      socket peer is loopback. A remote proxy would collapse every visitor
+#      into one rate-limit bucket.
+#
+#  So Caddy must share the host's network namespace (see
+#  docker-compose.public.yml). Do not put it on a bridge network.
+#
+#  Edit nothing here: the domain comes from the environment.
+# =============================================================================
+{
+	# Caddy's admin API can reconfigure the proxy, so keep it on loopback and
+	# never publish it. `caddy reload` from the container still works.
+	admin localhost:2019
+}
+
+{$MW_DOMAIN} {
+	encode zstd gzip
+
+	# The app emits CSP, HSTS, X-Frame-Options, X-Content-Type-Options and
+	# Referrer-Policy itself. Duplicating them here would only create two
+	# sources of truth; the only thing added is a "do not index" hint, because
+	# a private entry point should not end up in a search engine.
+	header {
+		-Server
+		X-Robots-Tag "noindex, nofollow"
+	}
+
+	reverse_proxy 127.0.0.1:8080 {
+		# Keep the public name: RequestGuard::isTrustedHost compares it against
+		# MW_DOMAIN (DNS-rebinding defence), and the CSP scopes connect-src to
+		# the origin the page was served from.
+		header_up Host {host}
+
+		# Replace, never append. The app reads the LAST X-Forwarded-For entry
+		# as the client address for rate limiting; overwriting it drops any
+		# value a client tried to inject.
+		header_up X-Forwarded-For {remote_host}
+
+		# AuthManager::attemptAddress checks CF-Connecting-IP BEFORE
+		# X-Forwarded-For, and Forwarded after it. A client that sets either
+		# one would choose its own rate-limit bucket, so neither may survive
+		# the hop. X-Real-IP is deleted too: the app never reads it.
+		header_up -CF-Connecting-IP
+		header_up -Forwarded
+		header_up -X-Real-IP
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

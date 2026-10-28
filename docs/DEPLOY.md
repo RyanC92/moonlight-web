@@ -228,24 +228,36 @@ wholesale.
 
 ## 6. Reverse proxy for 443 (recommended)
 
-Caddy is the shortest path:
+For anything reachable from the internet, use the prepared profile instead of
+hand-rolling a proxy — it ships the Caddyfile, the firewall list and the
+verification steps:
+
+```bash
+docker compose -f docker/docker-compose.public.yml up -d
+```
+
+See **`docs/PUBLIC.md`**. In short: Caddy terminates TLS for `MW_DOMAIN` and
+forwards to the app's **HTTP** listener on `127.0.0.1:8080`, and must share the
+host's network namespace so the app sees a loopback peer. That is what makes the
+app's tunnel path (`HttpServer.cpp`, "Exception 1") and its per-visitor rate
+limiting work.
+
+If you only need 443 on a trusted LAN, the minimal Caddy block is:
 
 ```caddyfile
 moonlight.example.com {
-    reverse_proxy 127.0.0.1:8443 {
-        transport http {
-            tls_insecure_skip_verify
-        }
-    }
+    reverse_proxy 127.0.0.1:8080
 }
 ```
 
-Caddy terminates TLS with a real certificate and forwards to the self-signed
-listener. `tls_insecure_skip_verify` is correct here: the hop is loopback and
-the upstream certificate is self-signed.
+Proxy to `8080` (plain HTTP), not `8443`: the HTTPS listener exists for direct
+LAN access with a self-signed certificate, and double-terminating TLS through it
+buys nothing.
 
-nginx equivalent, including the headers the app already sets (do not duplicate
-them — duplicates are harmless but confusing):
+nginx equivalent. The two `CF-Connecting-IP` / `Forwarded` lines are not
+cosmetic — `AuthManager::attemptAddress` reads `CF-Connecting-IP` **before**
+`X-Forwarded-For`, so if nginx passes a client-supplied one through, the visitor
+chooses its own rate-limit bucket:
 
 ```nginx
 server {
@@ -256,20 +268,25 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/moonlight.example.com/privkey.pem;
 
     location / {
-        proxy_pass https://127.0.0.1:8443;
-        proxy_ssl_verify off;
+        proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Replace, do not append, and drop the headers the app trusts first.
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header CF-Connecting-IP "";
+        proxy_set_header Forwarded "";
         proxy_read_timeout 3600s;
     }
 }
 ```
 
-WebSocket upgrade headers matter: the signalling channel upgrades.
+WebSocket upgrade headers matter: the signalling channel upgrades. Do not
+duplicate the app's own security headers (CSP, HSTS, X-Frame-Options,
+X-Content-Type-Options, Referrer-Policy) — it emits them, and two sources of
+truth drift.
 
 ### 6.1 Admin page through a proxy
 

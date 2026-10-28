@@ -38,6 +38,23 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   download link, rebrand, removal of upstream infrastructure references), plus
   the admin-unlock finding and its fix.
 
+**Public deployment** (one owner, their own hosts — `docs/PUBLIC.md`)
+
+- `docker/docker-compose.public.yml` — the internet-facing profile: the hardened
+  image plus Caddy, both on host networking. `MW_DOMAIN` is passed to the app so
+  the public hostname is trusted (`RequestGuard::isTrustedHost`) and to Caddy so
+  it serves that name. `MW_NO_TELEMETRY=1` added on top of `MW_LAN_ONLY=1`.
+- `docker/Caddyfile` — TLS termination for `$MW_DOMAIN`, forwarding to
+  `127.0.0.1:8080`. Preserves `Host`, **replaces** `X-Forwarded-For` with the
+  real peer, and deletes `CF-Connecting-IP`, `Forwarded` and `X-Real-IP`, because
+  `AuthManager::attemptAddress` reads `CF-Connecting-IP` first and would otherwise
+  let a visitor pick its own rate-limit bucket.
+- `docker/.env.public.example` — `MW_DOMAIN` and `TZ`, the only two settings.
+- `docs/PUBLIC.md` — the deployment guide: DNS, firewall table (public 80/443 and
+  UDP 48550-48573; private 8080/8443/48001 and the host's GameStream ports),
+  why the proxy must be loopback-local, a verification checklist with expected
+  output, failure modes, and an explicit "verified / not verified" table.
+
 **Monitoring** (host and container metrics only)
 
 - `docker/docker-compose.monitoring.yml` — Prometheus, Alertmanager, Grafana,
@@ -104,6 +121,13 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   local-privilege test needs a local peer **and** a local `Host`, so the password
   prompt is the correct behaviour there, and rewriting `Host` to a loopback name
   would hand out admin without a password.
+
+- `docs/DEPLOY.md` §6 now points at the public profile and proxies to the app's
+  plain-HTTP listener on `8080` instead of double-terminating TLS through `8443`.
+  The nginx example gained `CF-Connecting-IP` / `Forwarded` clearing and
+  `X-Forwarded-For $remote_addr` (replace, not append): with `$proxy_add_x_forwarded_for`
+  plus a pass-through `CF-Connecting-IP`, a client could choose its own
+  rate-limit key.
 
 ### Fixed
 
@@ -197,6 +221,12 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
 - Image build, container start, health check, HTTP/HTTPS responses, both auth
   flows, security scan, backup, restore, and the monitoring stack's three
   Prometheus targets.
+- Public profile: `caddy validate` against the shipped Caddyfile, `docker compose
+  config` with `MW_DOMAIN` set, and a TLS-terminated path in front of the app —
+  200 with the app's security headers, PIN login through the proxy (wrong PIN
+  401, right PIN 200 with `Secure; HttpOnly; SameSite=Strict`), a foreign `Host`
+  refused without reaching the app, and two different spoofed
+  `CF-Connecting-IP` values landing in the same rate-limit bucket.
 
 ### Not verified
 
