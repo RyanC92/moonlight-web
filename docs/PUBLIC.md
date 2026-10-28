@@ -21,6 +21,10 @@ network hop and roughly twice the stream bitrate in bandwidth.
 This profile is for **one owner**. There are no accounts and no tenancy: the
 entry point belongs to you, and every host in it is yours.
 
+The diagram shows the `direct` profile (Caddy on your own IP). Other edges —
+Cloudflare Tunnel, Tailscale Serve/Funnel, plain nginx — slot into the same
+place and change nothing else: see **`docs/EDGE.md`**.
+
 ---
 
 ## 1. What you need
@@ -58,9 +62,18 @@ cp docker/.env.public.example docker/.env
 $EDITOR docker/.env          # MW_DOMAIN=mw.example.com
 ```
 
-`MW_DOMAIN` is the bare hostname — no scheme, no path. It is used twice: Caddy
-serves that name, and the app trusts it (`RequestGuard::isTrustedHost`). Those
-two must agree, or the app will log `Local privilege denied for untrusted Host`.
+`MW_DOMAIN` is the bare hostname — no scheme, no path. Two things depend on it:
+the edge serves that name, and the app trusts it. The entrypoint writes it into
+`settings.json` as `domain` on every start, which is what
+`RequestGuard::isTrustedHost` compares against; the variable on its own is not
+enough, because `AppSettings::domain()` returns empty without the stored key.
+
+If the two disagree, the app still works but logs `Local privilege denied for
+untrusted Host` for every request and treats you as a stranger.
+
+`COMPOSE_PROFILES` in the same file chooses the edge — `direct` (Caddy, needs a
+public IP), `tunnel` (cloudflared, no inbound ports), or empty (something on the
+host already terminates TLS). See **`docs/EDGE.md`**.
 
 Compose reads `docker/.env` because the compose file lives in `docker/`.
 
@@ -78,7 +91,9 @@ docker compose -f docker/docker-compose.public.yml ps
 ```
 
 Wait for both to report healthy. The first certificate issuance can take a few
-seconds; `docker logs mw-caddy` shows the ACME exchange.
+seconds; `docker logs mw-caddy` shows the ACME exchange. On the `tunnel` profile
+there is no Caddy and no ACME — `docker logs mw-cloudflared` shows the
+registered connections instead.
 
 ### 2.5 First login
 
@@ -117,17 +132,21 @@ Public — the only three that must accept traffic from the internet:
 | 443 | TCP | the UI, the API, and the `wss://` signalling upgrade |
 | 48550-48573 | UDP | WebRTC media, one port per stream slot |
 
+That is the `direct` profile. With `COMPOSE_PROFILES=tunnel` there are **no
+public ports at all** — cloudflared dials out and Cloudflare serves 443. With an
+edge on the host (Tailscale, nginx) the open ports are whatever that edge needs.
+
 Private — must **not** be reachable from outside:
 
 | Port | Proto | What |
 |---|---|---|
-| 8080 | TCP | the app's HTTP listener; Caddy only |
+| 8080 | TCP | the app's HTTP listener; the edge only |
 | 8443 | TCP | the app's own self-signed HTTPS listener |
 | 48001 | TCP | WebRTC signalling, proxied through 443 |
 | 47984/47989/47990/48010 | TCP | ViBeShine: pairing, app list, web UI, RTSP |
 | 47998-48010 | UDP | ViBeShine media |
 
-With `ufw`, the whole policy is:
+With `ufw`, the whole policy for the direct profile is:
 
 ```bash
 ufw default deny incoming
@@ -135,6 +154,9 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 ufw allow 48550:48573/udp
 ```
+
+For the tunnel profile, the first two lines are the whole policy — do not open
+80 or 443 at all.
 
 Docker writes its own rules; check `ufw status` **and** `iptables -L DOCKER-USER`
 after starting, because a published host-network port is not always visible to
@@ -216,7 +238,7 @@ nc -zv mw.example.com 8443     # must fail
 | `ERR_TOO_MANY_REDIRECTS` | Caddy is not loopback-local | use `network_mode: host` |
 | Login returns `200` but you stay on the PIN screen | cookie rejected — plain HTTP | use `https://`, and check `X-Forwarded-Proto` |
 | `cross_site_request_blocked` on save | proxy rewrote `Origin` or `Host` | forward both unchanged |
-| `Local privilege denied for untrusted Host` in the log | `MW_DOMAIN` ≠ the Host header | make them identical |
+| `Local privilege denied for untrusted Host` in the log | `MW_DOMAIN` ≠ the `Host` the edge sends | make them identical, then `up -d` again so the entrypoint rewrites `domain` |
 | Stream negotiates, then drops to choppy TCP | UDP 48550-48573 blocked | open the range; do not NAT it |
 | Host card shows offline | ViBeShine unreachable **from the bridge** | forward 47984/47989 to the gaming PC, or use a tunnel |
 | Certificate never issues | 80/443 not reachable, or DNS not propagated | `docker logs mw-caddy` |
@@ -253,10 +275,9 @@ nc -zv mw.example.com 8443     # must fail
 - **No rendezvous.** `MW_LAN_ONLY=1` keeps the app off `moonlightweb.top`
   entirely: no introduction server, no STUN, no UPnP, no update check and no
   metrics. Your domain is the entry point.
-- **The home/CGNAT variant is documented but not yet tested** end to end: bridge
-  on the LAN, Caddy behind a tunnel. The app's tunnel path is the same one
-  Cloudflare-style proxies use, so it should hold — but it has not been run on a
-  live tunnel in this fork.
+- **The Cloudflare Tunnel path is verified; the home/CGNAT variant is not.** The
+  tunnel profile was exercised end to end (see §10), but a home box behind a
+  CGNAT with port forwards has not been run.
 
 ---
 
@@ -264,24 +285,28 @@ nc -zv mw.example.com 8443     # must fail
 
 The same compose file works on a home box if:
 
-1. ports 80/443 are forwarded to it (or a tunnel publishes only 443), and
+1. ports 80/443 are forwarded to it (or the `tunnel` profile is used, which
+   needs no inbound port), and
 2. the WebRTC UDP range is forwarded one-to-one (**no NAT translation of the
    port numbers** — 48550 must arrive as 48550), or the browser is on the same
-   LAN.
+   LAN, or you reach it over a tailnet.
 
 If neither holds, the stream falls back to its TCP/WebSocket transport: it works,
 with more latency. That fallback is what the bridge compose variant documents,
-and it is the honest limit of a CGNAT deployment without TURN.
+and it is the honest limit of a CGNAT deployment without TURN. `docs/EDGE.md`
+has the per-edge detail.
 
 ---
 
 ## 10. Verified on this bench (2026-10-28)
 
-Docker Desktop on Windows, app and proxy both `network_mode: host` (which on
+Docker Desktop on Windows, every service on `network_mode: host` (which on
 Desktop means the Docker VM's namespace, so the checks ran from a container on
-that same namespace). The proxy used the real `docker/Caddyfile` with one
-substitution — site `mw.test:19443` and `tls internal` — because no public DNS
-was available to issue a real certificate.
+that same namespace).
+
+**Run 1 — Caddy in front.** The real `docker/Caddyfile` with one substitution —
+site `mw.test:19443` and `tls internal` — because no public DNS was available to
+issue a real certificate.
 
 | Check | Result |
 |---|---|
@@ -291,8 +316,26 @@ was available to issue a real certificate.
 | Correct PIN | `200`, `set-cookie: mw_session=…; HttpOnly; Secure; Path=/; SameSite=Strict; Max-Age=7776000` |
 | Foreign `Host` | empty `200`, `content-length: 0`, no app headers |
 | Spoofed `CF-Connecting-IP` (two different values) | same bucket — `remaining` went `2` → `1`, so the header is stripped before the app sees it |
-| Compose interpolation | `docker compose config` valid with `MW_DOMAIN` set |
 
-Not verified here: Let's Encrypt issuance (needs public DNS), the firewall rules
-(Windows has no `ufw`), WebRTC media through a public hop, and the home/CGNAT
-topology.
+**Run 2 — Cloudflare Tunnel in front.** A live quick tunnel
+(`cloudflared tunnel --url http://127.0.0.1:8080`) against the app, reached from
+the Windows host over the public internet.
+
+| Check | Result |
+|---|---|
+| `GET /` over the tunnel | `200`; CSP `connect-src 'self' wss://<tunnel-host>` — Host preserved end to end; HSTS, XFO |
+| Wrong PIN | `401`, `remaining: 2` |
+| Correct PIN | `200` + `Secure; HttpOnly; SameSite=Strict` cookie |
+| Same PIN reused | `401` — single use holds through the edge |
+| `settings.json` `domain` | written from `MW_DOMAIN` by the entrypoint; no `untrusted Host` warnings in the log |
+| Profiles | `config --services` resolves to `moonlightweb + caddy`, `moonlightweb + cloudflared`, or `moonlightweb` alone |
+
+Two defects were found and fixed by these runs: `MW_DOMAIN` alone does not make
+the hostname trusted (the entrypoint now writes `domain` into `settings.json`),
+and the app reads `CF-Connecting-IP` before `X-Forwarded-For` (the edge now
+strips it).
+
+Not verified here: Let's Encrypt issuance (needs public DNS), a named Cloudflare
+tunnel with a token, Tailscale Serve/Funnel, the firewall rules (Windows has no
+`ufw`), and WebRTC media through a public hop — the TCP fallback cannot be
+exercised across the Docker Desktop VM boundary.

@@ -41,15 +41,26 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
 **Public deployment** (one owner, their own hosts — `docs/PUBLIC.md`)
 
 - `docker/docker-compose.public.yml` — the internet-facing profile: the hardened
-  image plus Caddy, both on host networking. `MW_DOMAIN` is passed to the app so
-  the public hostname is trusted (`RequestGuard::isTrustedHost`) and to Caddy so
-  it serves that name. `MW_NO_TELEMETRY=1` added on top of `MW_LAN_ONLY=1`.
+  image plus **one** edge, all on host networking. `MW_DOMAIN` is passed to the
+  app and to the edge. `MW_NO_TELEMETRY=1` added on top of `MW_LAN_ONLY=1`.
+- **Swappable edge via compose profiles.** `COMPOSE_PROFILES` selects what faces
+  the internet, and the app is identical in every case:
+  `direct` starts Caddy on 80/443; `tunnel` starts `cloudflared` and opens no
+  inbound port; empty starts neither, for a host-level edge (Tailscale Serve,
+  nginx, Traefik). `cloudflare/cloudflared:2026.10.5` is pinned like the other
+  images. Only one edge at a time — two TLS terminators for one name is a
+  configuration error, not a layer.
 - `docker/Caddyfile` — TLS termination for `$MW_DOMAIN`, forwarding to
   `127.0.0.1:8080`. Preserves `Host`, **replaces** `X-Forwarded-For` with the
   real peer, and deletes `CF-Connecting-IP`, `Forwarded` and `X-Real-IP`, because
   `AuthManager::attemptAddress` reads `CF-Connecting-IP` first and would otherwise
   let a visitor pick its own rate-limit bucket.
-- `docker/.env.public.example` — `MW_DOMAIN` and `TZ`, the only two settings.
+- `docker/.env.public.example` — `MW_DOMAIN`, `TZ`, `COMPOSE_PROFILES` and a
+  commented `TUNNEL_TOKEN`, with the three edge modes spelled out.
+- `docs/EDGE.md` — the edge contract (loopback reachability, `Host`, real client
+  address, WebSocket upgrades, `MW_DOMAIN`), worked examples for Cloudflare
+  Tunnel, Tailscale Serve/Funnel and nginx/Traefik, a latency/complexity
+  comparison, and an honest table of what each layer does and does not protect.
 - `docs/PUBLIC.md` — the deployment guide: DNS, firewall table (public 80/443 and
   UDP 48550-48573; private 8080/8443/48001 and the host's GameStream ports),
   why the proxy must be loopback-local, a verification checklist with expected
@@ -81,13 +92,20 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   `MW_INPUT` chain. Dry-run by default; `--default-drop` is a separate flag.
 - `scripts/MoonlightWebService.ps1` — NSSM wrapper for the Windows x64 build.
   Service lifecycle only; it does not invent configuration or download NSSM.
+- Windows x64 host build path, documented in `docs/BUILD.md`: Visual Studio
+  Build Tools 2022 (MSVC 14.44), Qt 6.10.3 `msvc2022_64` with WebSockets
+  (`aqtinstall` route included), the bundled OpenSSL import libs, `windeployqt`,
+  and the reason 6.11.x is not documented (aqt metadata 404). The build was run
+  and streamed from a real ViBeShine host.
 
 **Documentation**
 
 - `docs/DEPLOY.md` — what is deployed, why the ports are 8080/8443, operations,
   backup/restore, reverse proxy, monitoring, troubleshooting, and an explicit
   "what this does not claim" section.
-- `docs/BUILD.md` — build stages, arguments, verification, base-image updates.
+- `docs/BUILD.md` — the container build stages, arguments and verification, plus
+  the Windows x64 host build (toolchain, Qt via aqt, `windeployqt`, verify) and
+  base-image update procedure.
 - `docs/TEST.md` — the exact verification cycle that was run, with commands and
   observed output, plus what could not be tested on this host.
 - `docs/HARDENING.md` — each control, the threat it addresses, its limits, and
@@ -129,7 +147,30 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   plus a pass-through `CF-Connecting-IP`, a client could choose its own
   rate-limit key.
 
+- **`MW_DOMAIN` is now written into `settings.json` on every start.** The variable
+  is only a base for the retired `<uid>.<domain>` name; the served name comes from
+  `AppSettings::domain()`, which reads the `domain` key and returns empty without
+  it. The entrypoint lowercases and validates the value (bare FQDN only, no
+  scheme, no leading/trailing dot) and applies it like the listener ports, so
+  changing the name in `docker/.env` takes effect on the next `up -d` rather than
+  needing a fresh volume. `docs/EDGE.md` and `docs/PUBLIC.md` now state this
+  instead of implying the variable alone is sufficient.
+
 ### Fixed
+
+- **Two defects found by running a live tunnel, not by reading the code.**
+  1. A container started with `MW_DOMAIN` set still logged
+     `Local privilege denied for untrusted Host '<name>' (possible DNS
+     rebinding)` for *every* request: the variable never reached
+     `AppSettings::domain()`. Fixed in `docker/entrypoint-secure.sh` as described
+     under "Changed".
+  2. `AuthManager::attemptAddress` reads `CF-Connecting-IP` **before**
+     `X-Forwarded-For` and `Forwarded`. A visitor could send their own
+     `CF-Connecting-IP` through a proxy that merely appended to `X-Forwarded-For`
+     and pick a fresh rate-limit bucket per attempt, defeating the PIN lockout.
+     `docker/Caddyfile` now deletes `CF-Connecting-IP`, `Forwarded` and
+     `X-Real-IP` and replaces `X-Forwarded-For` with the real peer;
+     `docs/DEPLOY.md` §6 gives the nginx equivalent.
 
 - **The admin page could not be unlocked from a remote browser.**
   `AdminView._isLocalhost()` fell back to `window.location.hostname`, so any
@@ -227,10 +268,31 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   401, right PIN 200 with `Secure; HttpOnly; SameSite=Strict`), a foreign `Host`
   refused without reaching the app, and two different spoofed
   `CF-Connecting-IP` values landing in the same rate-limit bucket.
+- Swappable edge: `docker compose config --services` resolves to
+  `moonlightweb + caddy`, `moonlightweb + cloudflared`, or `moonlightweb` alone
+  for the three `COMPOSE_PROFILES` values.
+- **Cloudflare Tunnel, end to end.** A live quick tunnel
+  (`cloudflared tunnel --url http://127.0.0.1:8080`) against the app, reached from
+  the Windows host over the public internet: `200` for `/` with `connect-src`
+  scoped to the tunnel hostname, wrong PIN `401 remaining: 2`, correct PIN `200`
+  with a `Secure; HttpOnly; SameSite=Strict` cookie, the same PIN refused on
+  reuse, and no `untrusted Host` warnings after the entrypoint began writing
+  `domain`. The two defects listed under "Fixed" were found by this run.
+- `MW_DOMAIN` handling in the entrypoint: `sh -n` clean, and the applied value
+  appears in `settings.json` as `domain` after `up -d`.
 
 ### Not verified
 
 - `scripts/firewall-rules.sh` against live iptables (Windows test host).
-- `scripts/MoonlightWebService.ps1` `install`/`uninstall` (no NSSM, no Windows
-  build of the app on the test host). `status` and `help` were executed.
-- The Windows x64 build itself: no MSVC/Qt toolchain on the test machine.
+- `scripts/MoonlightWebService.ps1` `install`/`uninstall` (needs elevation and
+  NSSM). `status` and `help` were executed.
+- Let's Encrypt issuance here — it needs public DNS, which this bench does not
+  have. Caddy's configuration was validated, and TLS was exercised with its
+  internal CA instead.
+- A **named** Cloudflare tunnel with a token (`COMPOSE_PROFILES=tunnel`): the
+  quick tunnel exercises the same transport and header path, but the token flow
+  itself was not run.
+- Tailscale Serve/Funnel, and nginx/Traefik as edges.
+- WebRTC media through any public hop. The TCP fallback cannot be exercised
+  across the Docker Desktop VM boundary, so the stream was verified on the
+  Windows build instead.

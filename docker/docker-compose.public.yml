@@ -4,22 +4,28 @@
 #      cp docker/.env.public.example docker/.env      # set MW_DOMAIN
 #      docker compose -f docker/docker-compose.public.yml up -d
 #
-#  What this is for: a browser on any network opens https://<MW_DOMAIN>, signs
-#  in, and streams from hosts it has paired with — ViBeShine/Sunshine running
-#  on the gaming PC, reached exactly as Moonlight reaches it (RTSP/RTP/ENet,
-#  PIN pairing). Nothing is installed beside the host.
+#  What this is for: a browser opens https://<MW_DOMAIN>, signs in, and streams
+#  from hosts it has paired with — ViBeShine/Sunshine on the gaming PC, reached
+#  exactly as Moonlight reaches it (RTSP/RTP/ENet, PIN pairing). Nothing is
+#  installed beside the host.
 #
-#  This file does NOT change the connection to the host. It only adds the
-#  public leg: TLS in front of the app, and the firewall rules that keep the
-#  app's own listeners private. See docs/PUBLIC.md.
+#  The app is always the same. What faces the internet is a *profile*: pick one
+#  edge, or none if something on the host already terminates TLS.
 #
-#  Host networking is REQUIRED for both services, and for two different
-#  reasons:
+#      COMPOSE_PROFILES=direct    Caddy on 80/443   (needs a public IP)
+#      COMPOSE_PROFILES=tunnel    cloudflared       (no inbound ports at all)
+#      COMPOSE_PROFILES=          no edge container (Tailscale Serve, nginx,
+#                                                     Traefik, ... on the host)
+#
+#  Set it in docker/.env. `direct` is the default in the example file. See
+#  docs/EDGE.md for the contract any edge must honour and for worked examples.
+#
+#  Host networking is REQUIRED for every service here, and for two reasons:
 #
 #    • The app: WebRTC binds an ephemeral UDP port per stream slot, and it
 #      announces the address it believes it has. On a bridge network that
 #      address is unreachable from outside, so media falls back to TCP.
-#    • Caddy: it must reach 127.0.0.1:8080 so the app sees a loopback peer.
+#    • The edge: it must reach 127.0.0.1:8080 so the app sees a loopback peer.
 #      That is what makes the tunnel path and per-visitor rate limiting work.
 # =============================================================================
 services:
@@ -47,20 +53,26 @@ services:
     environment:
       TZ: ${TZ:-Etc/UTC}
 
-      # The public name, bare host, no scheme. It is read by AppSettings and
-      # reaches RequestGuard through CertManager::domain(), where it is what
-      # makes this hostname trusted instead of "a local peer with a foreign
-      # Host" (the DNS-rebinding case). It also replaces the upstream default
-      # of moonlightweb.top, which this fork does not contact.
+      # The public name, bare host, no scheme. The entrypoint writes it into
+      # settings.json as `domain` on every start — that key is what
+      # RequestGuard::isTrustedHost actually compares against (a variable alone
+      # is not enough: AppSettings::domain() returns empty without it). It also
+      # replaces the upstream default of moonlightweb.top, which this fork does
+      # not contact.
+      #
+      # Every edge below MUST present this same name in Host, or the app will
+      # log "Local privilege denied for untrusted Host" and treat you as a
+      # stranger — which is safe, but not what you wanted.
       MW_DOMAIN: ${MW_DOMAIN:?set MW_DOMAIN in docker/.env (for example mw.example.com)}
 
-      # No rendezvous, STUN, UPnP or update check. The public leg is Caddy, not
-      # the upstream introduction server, and nothing here should dial home.
+      # No rendezvous, STUN, UPnP or update check. The public leg is the edge
+      # you chose, not the upstream introduction server, and nothing here
+      # should dial home.
       MW_LAN_ONLY: "1"
       MW_NO_TELEMETRY: "1"
 
       # Listener ports above 1024, so the non-root user needs no capability.
-      # Caddy proxies to the HTTP one; the HTTPS one stays bound but must be
+      # An edge proxies to the HTTP one; the HTTPS one stays bound but must be
       # closed at the firewall (docs/PUBLIC.md, "Ports").
       MW_HTTP_PORT: "8080"
       MW_HTTPS_PORT: "8443"
@@ -84,11 +96,19 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ---------------------------------------------------------------------------
+  # Edge A — Caddy, for a box with a public IP.
+  #
+  # Obtains and renews a Let's Encrypt certificate for MW_DOMAIN, redirects 80
+  # to 443, and proxies to the app on loopback. This is the lowest-latency
+  # option: the browser can reach the WebRTC UDP range directly.
+  # ---------------------------------------------------------------------------
   caddy:
     image: caddy:2.10-alpine
     container_name: mw-caddy
     restart: unless-stopped
     network_mode: host
+    profiles: ["direct"]
 
     depends_on:
       moonlightweb:
@@ -125,6 +145,61 @@ services:
       timeout: 5s
       start_period: 20s
       retries: 3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Edge B — Cloudflare Tunnel, for CGNAT, a changing IP, or hiding the origin.
+  #
+  # Opens no inbound port. cloudflared dials out to Cloudflare, which serves
+  # MW_DOMAIN and forwards to http://localhost:8080 here. Configure the public
+  # hostname in the Zero Trust dashboard to point at http://localhost:8080.
+  #
+  # The trade: Cloudflare only carries HTTP and WebSocket, so the WebRTC media
+  # path falls back to its TCP/WebSocket transport. It works; it is slower than
+  # a direct UDP path. See docs/EDGE.md.
+  # ---------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.5
+    container_name: mw-cloudflared
+    restart: unless-stopped
+    network_mode: host
+    profiles: ["tunnel"]
+
+    depends_on:
+      moonlightweb:
+        condition: service_healthy
+
+    environment:
+      # The token from Zero Trust -> Networks -> Tunnels. It carries the tunnel
+      # identity and its credentials; treat it like a password.
+      #
+      # Defaulted to empty rather than required: compose interpolates every
+      # service's environment even when its profile is inactive, so a hard
+      # requirement here would break the `direct` and no-edge modes. With an
+      # empty value cloudflared itself refuses to start and says why — check
+      # `docker logs mw-cloudflared`.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+
+    # cloudflared's image is distroless: no shell, no health check available.
+    # `docker logs mw-cloudflared` is the interface; it prints the registered
+    # connection and reconnects on its own.
+    command: tunnel --no-autoupdate run
+
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+    cpus: "1.0"
+    mem_limit: 256m
+    pids_limit: 256
 
     logging:
       driver: "json-file"

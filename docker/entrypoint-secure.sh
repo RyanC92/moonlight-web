@@ -11,6 +11,8 @@
 #      fatal, because a non-root process cannot chown.
 #    - Validates MW_HTTP_PORT / MW_HTTPS_PORT before writing them, instead of
 #      trusting the environment.
+#    - Writes MW_DOMAIN into settings.json (`domain`), which is what actually
+#      makes the public hostname trusted; the variable alone is not.
 #    - Validates settings.json and logs the result to a dedicated security log.
 #    - Sets restrictive modes on settings.json and the security log.
 #    - Samples and rotates oversized logs.
@@ -79,6 +81,22 @@ apply_setting() {
     fi
 }
 
+# Same, for a string value. `--arg` quotes it; `--argjson` would try to parse it.
+apply_string_setting() {
+    _key=$1
+    _value=$2
+    [ -n "$_value" ] || return 0
+    [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+    _tmp="$SETTINGS.tmp"
+    if jq --arg v "$_value" ".\"$_key\" = \$v" "$SETTINGS" > "$_tmp" 2>/dev/null; then
+        mv "$_tmp" "$SETTINGS"
+    else
+        rm -f "$_tmp"
+        echo "entrypoint: could not set $_key in $SETTINGS (is it valid JSON?)" >&2
+        log_security "config-error: could not set $_key"
+    fi
+}
+
 # Plain POSIX shell: no `[[`, so this runs under dash as well as bash.
 valid_port() {
     case "$1" in
@@ -113,6 +131,44 @@ case "${MW_UPNP:-}" in
     0|no|false) apply_setting upnp_enabled false ;;
     1|yes|true) apply_setting upnp_enabled true ;;
 esac
+
+# ── The name this host answers to ────────────────────────────────────────────
+# MW_DOMAIN is NOT, by itself, the name the server serves: AppSettings::domain()
+# returns the `domain` key from settings.json when it holds a valid FQDN, and
+# returns EMPTY otherwise — the variable is only the base for the retired
+# <uid>.<domain> name it must refuse. Without this step a container started with
+# MW_DOMAIN set still treats its public hostname as foreign: every request logs
+# "Local privilege denied for untrusted Host", the DNS-rebinding warning, and
+# any edge that presents the real name gets no trust at all.
+#
+# Applied on every start, like the ports, so changing the domain in .env takes
+# effect on the next `up -d` instead of requiring a fresh volume.
+valid_domain() {
+    case "$1" in
+        ''|.*|*.|*..*|*[!a-z0-9.-]*) return 1 ;;
+    esac
+    case "$1" in
+        *.*) return 0 ;;
+    esac
+    return 1
+}
+
+if [ -n "${MW_DOMAIN:-}" ]; then
+    # Browsers send Host lowercased, and the server compares it byte for byte
+    # against the stored value, so normalise once, here.
+    _domain=$(printf '%s' "$MW_DOMAIN" | tr 'A-Z' 'a-z')
+    if valid_domain "$_domain"; then
+        _prev_domain=$(jq -r '.domain // ""' "$SETTINGS" 2>/dev/null || echo "")
+        apply_string_setting domain "$_domain"
+        if [ "$_prev_domain" != "$_domain" ]; then
+            log_security "setting domain=$_domain applied"
+        fi
+    else
+        echo "entrypoint: refusing invalid MW_DOMAIN='$MW_DOMAIN' (expected a bare FQDN such as mw.example.com)" >&2
+        log_security "config-error: invalid MW_DOMAIN='$MW_DOMAIN'"
+        exit 1
+    fi
+fi
 
 # ── Remote admin unlock: off by default (seed once) ──────────────────────────
 # `remote_admin_enabled` is a real persisted setting (AppSettings.cpp; default
