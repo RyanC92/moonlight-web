@@ -1,0 +1,89 @@
+# =============================================================================
+#  MoonlightWeb — TEST-ONLY access sidecar.
+#
+#      docker compose -f docker/docker-compose.testaccess.yml up -d
+#      docker compose -f docker/docker-compose.testaccess.yml down
+#
+#  WHAT THIS IS FOR, and why it is not part of the hardened deployment:
+#
+#  The hardened file (docker-compose.hardened.yml) uses `network_mode: host`,
+#  which is required for WebRTC, mDNS and UPnP. On Docker Desktop for Windows
+#  or macOS, "host" is the Linux VM's network namespace, NOT the desktop's —
+#  so a browser on the Windows/macOS host cannot reach the container at
+#  localhost:18080/18443. Everything below that address returns "refused",
+#  while the container is in fact healthy.
+#
+#  This sidecar publishes 8080/8443 on the desktop and forwards them to the
+#  host-networked container over the docker0 gateway (172.17.0.1). That is a
+#  test bench detail, not a deployment pattern: on a Linux host you reach the
+#  same listeners directly, with no proxy in the path at all.
+#
+#  What it deliberately does NOT fix: WebRTC media. Each stream slot binds a
+#  UDP port in 48550-48573, and the address the container announces is inside
+#  the VM, so a browser outside it cannot complete the media path. Expect the
+#  transport to fall back to WSS, or the stream not to start. Control-plane
+#  testing (login, PIN, admin, pairing, config, the security scan) is complete
+#  and meaningful through this proxy; streaming is not, and is listed as
+#  untested in docs/TEST.md §10.
+#
+#  socat is used rather than an HTTP reverse proxy on purpose: it forwards raw
+#  TCP bytes, so the application sees the browser's original Host header and
+#  scheme and emits exactly the headers it would emit directly. No header is
+#  rewritten, and nothing here adds a security control.
+# =============================================================================
+services:
+  mw-testaccess:
+    # socat, pinned by tag. Only used on a developer workstation; never on a
+    # server.
+    image: alpine/socat:1.8.0.0
+    container_name: mw-testaccess
+    restart: "no"
+
+    # Compose places this on the project network (<project>_default, a 172.x
+    # bridge) — not on the legacy "default bridge". That is fine: the forward
+    # target 172.17.0.1 is the VM's docker0 gateway, routable from every bridge
+    # on the same VM. Verified in practice from 172.21.0.7 to 172.17.0.1:8443.
+    #
+    # Host-side ports are deliberately NOT 8080/8443: those are the
+    # application's own listener numbers, and reusing them on the desktop
+    # invites a clash with whatever else is already bound there. 18080/18443
+    # say plainly that this is a bench, not the deployment.
+    ports:
+      # HTTPS — the web UI, the wss:// signaling upgrade, and the API.
+      - "18443:8443/tcp"
+      # HTTP — the app's own redirect to HTTPS.
+      - "18080:8080/tcp"
+
+    # Byte-transparent TCP forwarding. No TLS termination: the application
+    # serves its own certificate and the browser must see it unmodified, so the
+    # self-signed warning below is the same one a direct connection shows.
+    #
+    #   fork  — one process per connection, so several browsers can connect.
+    #   keepalive — a dropped client does not leave a half-open forwarder.
+    #   readbytes — bounds how much socat buffers per connection.
+    # socat has no "connect-retry" option: if the application listener is not
+    # up yet, the client is refused and the browser retries on its own.
+    # The image ships ENTRYPOINT=["socat"], which would prepend socat to the
+    # script below and turn it into socat's own arguments ("exactly 2 addresses
+    # required"). Override the entrypoint, not just the command.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        socat -d -d TCP-LISTEN:8080,reuseaddr,fork,keepalive,readbytes=1048576 TCP:172.17.0.1:8080 &
+        socat -d -d TCP-LISTEN:8443,reuseaddr,fork,keepalive,readbytes=1048576 TCP:172.17.0.1:8443 &
+        wait -n
+        echo "one forwarder exited; stopping the sidecar" >&2
+        exit 1
+
+    # Forwarding only. Nothing is mounted, nothing is privileged, no
+    # capability is added, and the root filesystem stays as the image ships it.
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"

@@ -337,7 +337,7 @@ Browser‑side image enhancement on the GPU (WebGL2, or WebGPU in HDR): **upscal
 ## Admin page
 
 The **Admin** page configures the server itself. It opens on the local machine (`https://localhost/admin`, or tray icon → *Server Settings*), and on another device only once you set a **Remote administration** password: from your LAN, or through your entry link if you tick that too.\
-Any other request to `/api/admin/*` gets **403**.
+A remote device that has passed the PIN may **read** the page, which is how it draws its own unlock prompt; every **change** needs the password first, and an unauthenticated request to `/api/admin/*` gets **403**.
 
 It controls: admin **PIN**, active **sessions**, HTTP/HTTPS **ports**, **transport** (WebRTC/WSS), **Internet access**, and the **certificate token**.
 

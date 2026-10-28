@@ -65,6 +65,11 @@ export class AdminView {
         // password — the view renders the prompt instead of the "host only"
         // notice. Set for exactly the clients /api/auth/admin-unlock accepts.
         this._adminUnlockAvailable = false;
+        // Whether /api/auth/status actually answered. Before it has, the URL
+        // fallback in _isLocalhost() is all there is; once it has, the server's
+        // verdict is authoritative and must not be overridden by the name in
+        // the address bar.
+        this._authStatusLoaded = false;
         // Admin view of the same setting: whether the LAN may unlock at all, and
         // whether a password has been set for it. There is no built-in default,
         // so until one is set the door is advertised but opens for nobody.
@@ -360,6 +365,7 @@ export class AdminView {
     async _loadAuthStatus() {
         try {
             const status = await BackendClient.getAuthStatus();
+            this._authStatusLoaded = true;
             this._hasAdminAccess = !!status.is_localhost;
             this._isRealHostMachine = !!status.is_host_machine;
             this._adminUnlockAvailable = !!status.admin_unlock_available;
@@ -655,6 +661,14 @@ export class AdminView {
         // loopback. Named for what it gates (admin), not for where we are.
         if (this._hasAdminAccess) return true;
         if (BackendClient.adminLocked) return false; // booth mode (--noadmin)
+        // Once the backend has answered, its verdict decides. Reaching the app
+        // under the name "localhost" proves nothing: a TLS-terminating reverse
+        // proxy or a tunnel forwards every visitor from loopback, and the server
+        // would still refuse every write. Trusting the address bar there renders
+        // a fully editable-looking page whose saves all 403.
+        if (this._authStatusLoaded) return false;
+        // Before the answer arrives (or if the request failed), fall back to the
+        // URL so a genuine local operator is not shown "host only" for a frame.
         const hostname = window.location.hostname;
         return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
     }

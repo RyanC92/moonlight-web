@@ -214,7 +214,8 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
         // Only localhost can modify internet access settings
         if (!req.isLocal)
             return HttpResponse::error(
-                403, "Internet access settings can only be modified from localhost");
+                403, "Internet access settings can only be changed by the host machine "
+                     "or after unlocking with the admin password");
 
         QJsonDocument doc = QJsonDocument::fromJson(req.body);
         QJsonObject body = doc.object();
@@ -1030,7 +1031,8 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
             // Only localhost can modify internet access settings
             if (!req.isLocal)
                 return HttpResponse::error(
-                    403, "Internet access settings can only be modified from localhost");
+                    403, "Internet access settings can only be changed by the host machine "
+                         "or after unlocking with the admin password");
 
             internetAccess.stop();
             appSettings.setInternetAccessEnabled(false);
@@ -1117,9 +1119,11 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
 
     server.router()->post("/api/admin/settings", [&server, &appSettings, &authManager,
                                                   &internetAccess](const HttpRequest& req) {
-        // Only localhost can modify server admin settings
+        // Only the host machine, or a session that unlocked with the admin
+        // password, may modify server admin settings.
         if (!req.isLocal)
-            return HttpResponse::error(403, "Admin settings can only be modified from localhost");
+            return HttpResponse::error(403, "Admin settings can only be changed by the host "
+                                            "machine or after unlocking with the admin password");
 
         QJsonDocument doc = QJsonDocument::fromJson(req.body);
         QJsonObject body = doc.object();
@@ -1331,10 +1335,12 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
     });
 
     server.router()->post("/api/settings/streaming", [&appSettings](const HttpRequest& req) {
-        // Only localhost can modify server-side streaming settings
+        // Only the host machine, or a session unlocked with the admin password,
+        // can modify server-side streaming settings.
         if (!req.isLocal)
             return HttpResponse::error(403,
-                                       "Streaming settings can only be modified from localhost");
+                                       "Streaming settings can only be changed by the host "
+                                       "machine or after unlocking with the admin password");
 
         QJsonDocument doc = QJsonDocument::fromJson(req.body);
         QJsonObject body = doc.object();

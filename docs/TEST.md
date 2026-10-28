@@ -73,6 +73,36 @@ If it is restarting, read `docker logs moonlightweb`. The known failure modes
 are all in `docs/DEPLOY.md` §8; the most common is a host that cannot give the
 non-root user an unprivileged port, which is why the image uses 8080/8443.
 
+### 2.1 Reaching the container from Windows or macOS (test bench only)
+
+`network_mode: host` is the Linux VM's namespace under Docker Desktop, so a
+browser on the desktop cannot reach the container at `localhost:8080/8443`.
+Container-side checks in §3–§9 still work; only the browser needs a path in.
+
+```powershell
+docker compose -f docker/docker-compose.testaccess.yml up -d
+docker ps --filter name=mw-testaccess --format "{{.Names}}`t{{.Status}}"
+curl.exe -sk -o NUL -w "https 18443 -> %{http_code}`n" https://localhost:18443/api/health --max-time 10
+```
+
+Expect `mw-testaccess   Up ...` and `https 18443 -> 200`, then open
+`https://localhost:18443` and accept the self-signed certificate. This is the
+same certificate a direct connection serves — the sidecar forwards raw TCP and
+rewrites nothing.
+
+Two consequences of the bench, both expected:
+
+- The server sees the sidecar's bridge address, not `127.0.0.1`. The admin page
+  therefore renders its **password unlock** prompt rather than the local admin
+  view. Enter the password set with `--set-admin-password`; the prompt is the
+  correct behaviour, not a fault. It is also why `AdminView` must trust
+  `/api/auth/status` over the name in the address bar.
+- WebRTC media cannot cross the VM boundary, so a stream will fall back or not
+  start. See §10.
+
+Do not deploy this file on a server. On a Linux host the listeners are reachable
+directly and the sidecar is unnecessary.
+
 ---
 
 ## 3. Runtime posture
@@ -202,6 +232,57 @@ docker exec moonlightweb sh -c 'jq .remote_admin_enabled /data/.local/share/Moon
 
 Expected: `true`.
 
+### 6.2 Rejections (negative tests)
+
+```powershell
+$b = Join-Path $env:TEMP "wrongpin.json"; '{"pin":"000000"}' | Set-Content -Path $b -NoNewline -Encoding ascii
+curl.exe -sk -X POST https://localhost:18443/api/auth/validate -H "Content-Type: application/json" --data-binary "@$b" -w "`nHTTP %{http_code}`n" --max-time 8
+curl.exe -sk -X POST https://localhost:18443/api/admin/settings -H "Content-Type: application/json" -H "Origin: https://evil.example" -d "{}" -w "`nHTTP %{http_code}`n" --max-time 8
+curl.exe -sk -o NUL -w "unauth read -> %{http_code}`n" https://localhost:18443/api/admin/settings --max-time 8
+```
+
+Expected, in order:
+
+```
+{"error":"invalid_pin","lockout_seconds":0,"remaining":2,"status":"error"}   HTTP 401
+{"error":"cross_site_request_blocked"}                                      HTTP 403
+unauth read -> 401
+```
+
+Write JSON bodies to a file and pass `--data-binary "@file"`. Inline JSON in
+PowerShell lets `!` and quote escaping corrupt the payload, which produces a
+`400` that looks like an application fault.
+
+### 6.3 The admin write chain
+
+An authenticated read of `/api/admin/*` succeeds — that is how the page loads
+the data behind its unlock prompt. A **change** additionally needs a promoted
+session and the per-run key:
+
+```powershell
+$jar  = Join-Path $env:TEMP "mw-cookies.txt"
+$body = Join-Path $env:TEMP "unlock.json"; '{"password":"<the password>"}' | Set-Content -Path $body -NoNewline -Encoding ascii
+curl.exe -sk -b $jar -c $jar -X POST https://localhost:18443/api/auth/admin-unlock -H "Content-Type: application/json" --data-binary "@$body" -w "`nHTTP %{http_code}`n" --max-time 8
+$key = (curl.exe -sk -b $jar https://localhost:18443/api/admin/token | ConvertFrom-Json).token
+curl.exe -sk -b $jar -X POST https://localhost:18443/api/admin/pin/generate -H "Content-Type: application/json" -H "x-mw-admin-key: $key" -d "{}" -w "`nHTTP %{http_code}`n" --max-time 8
+```
+
+Expected: `{"status":"ok"}` then a new PIN, both `HTTP 200`. A `403` here with
+an unlocked session means the `x-mw-admin-key` header is missing
+(`HttpServer.cpp:869`, `RequestGuard.cpp:292`).
+
+The browser equivalent is: PIN → Admin → password prompt → unlock → toggle a
+setting → save. Confirm the write landed, not just that the UI said so:
+
+```powershell
+docker exec moonlightweb sh -c 'ls -l --time-style=+%H:%M:%S /data/.local/share/MoonlightWeb/MoonlightWeb/settings.json'
+docker exec moonlightweb sh -c 'grep -iE "admin password validated|Admin access unlocked" /data/.local/share/MoonlightWeb/MoonlightWeb/logs/moonlightweb.log | tail -3'
+```
+
+The file's mtime must move and the log must show the validation followed by the
+unlock. This is the check that would have caught the `AdminView._isLocalhost()`
+defect described in `docs/BACKLOG.md`.
+
 ---
 
 ## 7. Security scan
@@ -304,7 +385,7 @@ Add `-v` only if you also want to discard the monitoring databases.
 | `scripts/MoonlightWebService.ps1 install` | no NSSM and no Windows build on the test host | Windows host with the MSVC build + NSSM (see `docs/DEPLOY.md`) |
 | Windows x64 build | no MSVC/Qt toolchain here | `cmd /c backend\build_msvc.bat` on Windows |
 | Real WebRTC streaming | needs a Moonlight/Sunshine host and a browser | pair a host, start a stream, check media |
-| Host networking from the Windows host | Docker Desktop host networking is the VM's | deploy on Linux and `curl https://<host>:8443` |
+| Host networking from the Windows host | Docker Desktop host networking is the VM's | deploy on Linux and `curl https://<host>:8443`; for UI testing only, the sidecar in §2.1 |
 
 A test run is complete when §3–§9 pass. A deployment is usable when, in
 addition, the first pin has been entered in a browser and a stream has started.
@@ -314,6 +395,9 @@ addition, the first pin has been entered in a browser and a stream has started.
 ## 11. Teardown
 
 ```powershell
+# test bench first, if it was used
+docker compose -f docker/docker-compose.testaccess.yml down
+
 # keep the volume
 docker compose -f docker/docker-compose.hardened.yml down
 

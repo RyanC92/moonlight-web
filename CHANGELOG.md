@@ -28,6 +28,15 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   passthrough as the upstream one, plus port validation, a `remote_admin_enabled`
   seed on first run, a security event log, and 100 MB log rotation. It
   deliberately does **not** refuse to start without a PIN (see below).
+- `docker/docker-compose.testaccess.yml` — **test bench only.** A `socat` sidecar
+  that publishes 18080/18443 and forwards them to the host-networked container at
+  `172.17.0.1`. Needed because Docker Desktop's "host" networking is the Linux
+  VM's namespace, so a browser on Windows or macOS cannot reach the container at
+  `localhost`. It forwards raw TCP, adds no control, and is not part of the
+  deployment. It does **not** make WebRTC media work.
+- `docs/BACKLOG.md` — requested changes that are not implemented yet (ViBeShine
+  download link, rebrand, removal of upstream infrastructure references), plus
+  the admin-unlock finding and its fix.
 
 **Monitoring** (host and container metrics only)
 
@@ -90,6 +99,25 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   image.
 - `README.md`'s Docker section points at the hardened variant and its docs. The
   upstream quick-start remains as-is.
+
+### Fixed
+
+- **The admin page could not be unlocked from a remote browser.**
+  `AdminView._isLocalhost()` fell back to `window.location.hostname`, so any
+  client that reached the app under the name `localhost` — a TLS-terminating
+  reverse proxy, a tunnel, or the test bench — was treated as the host machine
+  and shown the full admin page, while the server correctly refused every write.
+  The page looked editable and every save returned 403. The verdict from
+  `/api/auth/status` is now authoritative once it has answered; the URL fallback
+  only covers the moment before that answer arrives. The password prompt the
+  page was always meant to show now appears, and a save after unlocking
+  persists.
+- **Misleading `403` text.** `SystemRoutes.cpp` answered "can only be modified
+  from localhost" when the actual requirement was the remote admin password.
+  All four occurrences now name the real condition.
+- **`README.md` overstated the admin guard.** It claimed every `/api/admin/*`
+  request gets 403. Authenticated reads return 200 by design, so the page can
+  load the prompt that unlocks it; only changes are gated.
 
 ### Removed
 
