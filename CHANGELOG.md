@@ -124,6 +124,15 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   request gets 403. Authenticated reads return 200 by design, so the page can
   load the prompt that unlocks it; only changes are gated.
 
+- **`scripts/MoonlightWebService.ps1` set two environment variables the binary
+  never reads.** `MW_HTTP_PORT`/`MW_HTTPS_PORT` are a container-entrypoint
+  convention: the entrypoint translates them into `settings.json`. The
+  executable honours only `--port` (HTTP); the HTTPS port comes from
+  `settings.json` and falls back from 443 through 8443/18443. The service now
+  passes `--port`, sets only `MW_SERVICE` (and `MW_LAN_ONLY` when asked), and
+  reports whichever sockets the process actually holds instead of assuming a
+  fixed pair.
+
 ### Removed
 
 - `SECURITY_FIXES_SUMMARY.md` and `SECURITY_HARDENING_CHECKLIST.md` — contained

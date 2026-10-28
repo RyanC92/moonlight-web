@@ -52,8 +52,7 @@ param(
     [string]$LogPath = 'C:\ProgramData\MoonlightWeb\logs',
     [string]$ServiceAccount = '',
     [switch]$LanOnly,
-    [int]$HttpPort = 8080,
-    [int]$HttpsPort = 8443
+    [int]$HttpPort = 8080
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,7 +115,8 @@ function Show-State {
     Write-Host '  Service logs: ' -NoNewline; Write-Host $LogPath
     Write-Host '  App state   : ' -NoNewline
     Write-Host "%APPDATA%\MoonlightWeb\MoonlightWeb  (in $profileHint)"
-    Write-Host '  Ports       : ' -NoNewline; Write-Host "http=$HttpPort https=$HttpsPort"
+    Write-Host '  HTTP port   : ' -NoNewline; Write-Host "$HttpPort (--port; the app persists it)"
+    Write-Host '  HTTPS port  : ' -NoNewline; Write-Host 'from settings.json (default 443, falls back to 8443/18443/...); see status'
     Write-Host ''
     Write-Host '  First-run setup (run in a session of the service account):'
     Write-Host "    & '$AppPath' --set-admin-password"
@@ -148,13 +148,12 @@ function Install-Service {
     Invoke-Nssm set $ServiceName Start SERVICE_AUTO_START
 
     # MW_SERVICE is what makes the app headless: no tray, no desktop calls, no
-    # relaunch-on-update. The port variables are the same ones the container
-    # entrypoint writes into settings.json.
-    $envLines = @(
-        'MW_SERVICE=1',
-        "MW_HTTP_PORT=$HttpPort",
-        "MW_HTTPS_PORT=$HttpsPort"
-    )
+    # relaunch-on-update. The listening ports are NOT environment variables:
+    # MW_HTTP_PORT/MW_HTTPS_PORT are a container-entrypoint convention with no
+    # reader in the binary. The HTTP port is the --port option; the HTTPS port
+    # lives in settings.json and falls back through 443/8443/18443 on its own.
+    Invoke-Nssm set $ServiceName AppParameters "--port $HttpPort"
+    $envLines = @('MW_SERVICE=1')
     if ($LanOnly) { $envLines += 'MW_LAN_ONLY=1' }
     Invoke-Nssm set $ServiceName AppEnvironmentExtra @envLines
 
@@ -246,11 +245,26 @@ function Show-Status {
     Write-Host "Status  : $($svc.Status)"
     Write-Host "Startup : $($svc.StartType)"
     if ($svc.Status -eq 'Running') {
-        Write-Step 'Listening check:'
-        foreach ($port in @($HttpPort, $HttpsPort)) {
-            $conn = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
-            if ($conn) { Write-Host "  TCP $port  listening" }
-            else { Write-Host "  TCP $port  not listening (the server may have fallen back)" }
+        # Ask the process which sockets it actually holds. Both ports can move:
+        # the HTTPS listener falls back from 443 to 8443/18443/... and the app
+        # persists whatever it got, so a fixed list would lie.
+        $procIds = @(Get-Process -Name 'MoonlightWeb' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
+        if ($procIds.Count -eq 0) {
+            Write-Warn 'No MoonlightWeb process found, though the service reports Running.'
+        } else {
+            Write-Step 'Listening sockets:'
+            $listeners = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+                Where-Object { $procIds -contains $_.OwningProcess } |
+                Sort-Object LocalPort
+            if (-not $listeners) {
+                Write-Warn '  The process holds no listening socket yet (still starting?).'
+            } else {
+                foreach ($l in $listeners) {
+                    $scheme = if ($l.LocalPort -eq $HttpPort) { 'http ' } else { 'https' }
+                    Write-Host ("  {0} {1}:{2}" -f $scheme, $l.LocalAddress, $l.LocalPort)
+                }
+            }
+            Write-Host "  Open https://localhost:$HttpPort only if it is listed; otherwise read the https line."
         }
     } else {
         Write-Warn "Not running. Last NSSM output:"
@@ -272,8 +286,13 @@ Parameters
   -LogPath         NSSM stdout/stderr logs (default C:\ProgramData\MoonlightWeb\logs)
   -ServiceAccount  dedicated local account to run as (prompts for password)
   -LanOnly         set MW_LAN_ONLY=1 in the service environment
-  -HttpPort        MW_HTTP_PORT  (default 8080)
-  -HttpsPort       MW_HTTPS_PORT (default 8443)
+  -HttpPort        HTTP listener port, passed as --port (default 8080)
+
+The HTTPS port is not an option here: the binary has no flag or environment
+variable for it. It is read from settings.json (default 443) and falls back to
+8443, 18443, ... when taken; set it from the Admin page. The MW_HTTP_PORT /
+MW_HTTPS_PORT variables you may have seen belong to the Docker entrypoint,
+which writes them into settings.json - the binary does not read them.
 
 The app's own state lives in %APPDATA%\MoonlightWeb\MoonlightWeb under the
 service account. It is not configurable from this script because the app does

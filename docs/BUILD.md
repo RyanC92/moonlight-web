@@ -77,6 +77,68 @@ Differences from the hardened image: runs as root, binds 80/443, no
 read-only rootfs, no resource limits baked in, `ENTRYPOINT` is
 `docker/entrypoint.sh` rather than `docker/entrypoint-secure.sh`.
 
+## Windows x64 host build
+
+The container is the recommended deployment; this path produces `MoonlightWeb.exe`
+for a Windows host, which is what `scripts/MoonlightWebService.ps1` supervises.
+
+### Requirements
+
+| Component | Version used | Notes |
+|---|---|---|
+| Visual Studio Build Tools 2022 | 17.14, MSVC 14.44 (v143) | workload **Desktop development with C++**; brings the compiler, Windows SDK and its own CMake + Ninja |
+| Qt 6 MSVC 2022 64-bit | 6.10.3 | must include the **WebSockets** module; any 6.x kit works |
+| OpenSSL | none to install | `backend/libs/windows` ships x64 and arm64 import libs, DLLs and headers; CMake pins them |
+| Python + `aqtinstall` | optional | installs Qt without a Qt account |
+
+`build_msvc.bat` calls `vswhere` to enter the MSVC environment and takes the
+highest `C:\Qt\6.*\msvc2022_64` kit. Set `QTDIR` (or `CMAKE_PREFIX_PATH`) to
+override, and `BUILD_JOBS` to cap parallelism on a small machine.
+
+### Install Qt without a Qt account
+
+```powershell
+pip install aqtinstall
+aqt install-qt windows desktop 6.10.3 win64_msvc2022_64 -O C:\Qt --modules qtwebsockets
+```
+
+Qt's own online installer works too, but demands an account. Note that aqt's
+metadata path for **6.11.x returns 404** from `download.qt.io`, which is why the
+6.10 line is documented here; 6.8.x and 6.10.x resolve normally.
+
+### Build
+
+```powershell
+cmd /c backend\build_msvc.bat
+```
+
+Output: `build\MoonlightWeb.exe`. Submodules are fetched on the first run if they
+are missing; a normal clone already has them.
+
+### Make the binary self-contained
+
+Qt DLLs are not next to the executable, so deploy them before copying it
+anywhere:
+
+```powershell
+C:\Qt\6.10.3\msvc2022_64\bin\windeployqt.exe --release --no-translations build\MoonlightWeb.exe
+```
+
+OpenSSL's `libcrypto-3-x64.dll` and `libssl-3-x64.dll` come from
+`backend/libs/windows/lib/x64` and must sit next to the exe as well. Do **not**
+run `--no-openssl`: the server terminates TLS itself.
+
+### Verify
+
+```powershell
+build\MoonlightWeb.exe --version
+build\MoonlightWeb.exe --status
+```
+
+Then open `https://localhost` and confirm the UI loads. The Windows build shares
+`frontend/` and `backend/` with the image, so a fix verified in one is present in
+the other.
+
 ## Rebuilding for base-image updates
 
 The image deliberately does not bundle Qt or OpenSSL by hand: both come from the

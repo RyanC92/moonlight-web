@@ -134,5 +134,68 @@ Still open, deliberately not changed: writes require **three** things (session,
 promoted session, `x-mw-admin-key`). That is the intended model and the UI now
 supplies all three after an unlock.
 
+## 5. Virtual display: use ViBeShine's adapter instead of MttVDD?
+
+Investigated 2026-10-28. **Verdict: no — keep the bundled MttVDD.** ViBeShine's
+"virtual display adapter" is not a driver we can point at from a setting; it is a
+driver *plus* a private binary control protocol, and installing it requires
+granting a self-signed certificate machine-wide trust.
+
+### What it actually is
+
+- **Driver** — `SunshineVirtualDisplayDriver` (UMDF/IddCx, described upstream as
+  clean-room): hardware ID `Root\SunshineVirtualDisplay`, device interface class
+  `{5f894d6c-3a69-48a2-86ef-e4c671932d63}`, shipped as dll + cat + cer and
+  installed by their own ~1,800-line `install.ps1`.
+- **Client** — a *separate* MIT repository, `Nonary/libvirtualdisplay`. The
+  Windows transport opens the interface path with SetupAPI, `CreateFileW`, then
+  `DeviceIoControl` (`src/driver/windows_control_client.cpp`). The protocol is
+  versioned and lease-based: API namespace `{a2864284-77fe-4336-a828-00feeC89ebac}`,
+  major 3 / minor 8, minimum compatible minor 6; `LeaseId` separate from
+  `DisplayId`; create/remove temporary displays, HDR EDID, a frame-ring transport.
+- ViBeShine's own host-side glue is `src/platform/windows/virtual_display_sunshine.cpp`,
+  ~378 KB.
+
+### Why we cannot simply drive it
+
+1. **No control path exists in our code.** Our Windows VDD stage is a settings
+   XML rewritten with the client's resolution, then a SetupAPI node toggle
+   (`VirtualDisplay.cpp`, `VirtualDisplayApply.cpp`). There is no device-interface
+   client to reuse and no protocol implementation to talk to.
+2. **Its device is closed to us.** The INF sets
+   `D:P(A;;GA;;;SY)(A;;GA;;;S-1-5-80-…)` on both the node and the control
+   interface — SYSTEM plus one service identity, with Administrators
+   deliberately absent. Our `--vdisplay-apply` helper runs with an admin token,
+   so it would be refused. Reaching the interface means running that helper as
+   SYSTEM or rewriting the installed node's DACL.
+3. **Its signature model is weaker than ours.** The catalog is signed by a
+   **self-signed** certificate (`CN=Sunshine Virtual Display Release Signing`,
+   2026–2036, no CA), which their installer adds to `LocalMachine\Root` and
+   `TrustedPublisher`. Anyone who obtains that private key can then sign drivers
+   this machine trusts. MttVDD is signed by SignPath Foundation, chaining to
+   GlobalSign — already trusted, nothing added to the root store.
+
+### Licensing is *not* the blocker
+
+Both the driver and `libvirtualdisplay` are MIT (© 2026 Chase Payne), so they are
+compatible with this project's GPL-3.0 and could legally be vendored. The
+obstacles are architectural and trust-related, not legal.
+
+### What adopting it would take
+
+Vendor `libvirtualdisplay`, add a control-client stage, host display creation in
+a SYSTEM-run helper, and accept the root-store certificate — plus a new
+dependency surface to review. Weeks of work, and a wider privilege/trust
+footprint than the current pinned-hash + SetupAPI model.
+
+It would buy: per-session create/remove instead of rewriting XML and toggling the
+node, HDR-capable EDID, and zero-copy frame push. None of these is a gap today —
+MttVDD already matches the client's resolution (`vddmatch`) at up to 240 Hz.
+
+**Revisit if** MttVDD stops being signed or maintained, or if HDR virtual
+displays / per-client isolated displays become a requirement. At that point the
+right starting point is `libvirtualdisplay`'s own `docs/` and probe tool, not
+ViBeShine's integration layer.
+
 
 

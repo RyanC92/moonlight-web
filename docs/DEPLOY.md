@@ -119,6 +119,12 @@ Both are validated by the entrypoint before being written to `settings.json`; an
 invalid value aborts startup with a clear error rather than binding something
 unexpected.
 
+These two variables are a **container convention, not a binary feature**: the
+entrypoint translates them into `settings.json` keys `http_port`/`https_port`.
+The executable itself reads neither — outside the container, set ports with
+`--port` (HTTP) or the Admin page (HTTPS). See `scripts/MoonlightWebService.ps1`
+for the Windows service equivalent.
+
 ### 3.4 Stable uid (why rebuilds keep the volume)
 
 The application user is pinned to **uid/gid 10001**, not allocated with
