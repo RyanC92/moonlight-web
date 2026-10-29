@@ -111,6 +111,31 @@ Open `https://<MW_DOMAIN>`, enter the PIN, and you are in. The PIN is regenerate
 the moment it is used; the session cookie (90 days, or 8 hours if you untick
 "remember me") is what keeps you signed in from then on.
 
+### Admin access from a remote computer
+
+For a VPS, use an SSH local port forward to reach the app's private HTTP
+listener. From your computer, run:
+
+```bash
+ssh -N -L 18080:127.0.0.1:8080 ubuntu@203.0.113.10
+```
+
+Replace the example username and IP with your VPS details. Keep the SSH
+connection open and browse to
+[`http://localhost:18080/admin`](http://localhost:18080/admin). This sends the
+request through SSH and reaches MoonlightWeb as a loopback connection. Do not
+open port 8080 or 8443 to the internet; in this deployment they are private
+app listeners for the edge and local administration.
+
+The public hostname remains the normal entry point for the web interface, but
+it does not grant host-local Admin access. The web-interface PIN and the
+Remote administration password have different purposes; the latter unlocks
+administration from supported LAN or rendezvous-tunnel peers, not ordinary
+public-domain visitors. `--enable-internet` does not make the Admin page
+available through your public hostname. See the
+[self-hosting VPS access guide](SELF_HOSTING.md#admin-access-from-a-remote-computer-or-vps)
+for the standard Docker listener and additional details.
+
 ### 2.6 Pair the host
 
 1. In MoonlightWeb, add a host **by IP address** — `192.168.5.200` or whatever

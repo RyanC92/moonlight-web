@@ -321,7 +321,7 @@ Browser‑side image enhancement on the GPU (WebGL2, or WebGPU in HDR and on iPh
 
 ## Admin page
 
-The **Admin** page configures the server itself. It opens on the local machine (`https://localhost/admin`, or tray icon → *Server Settings*), and on another device only once you set a **Remote administration** password: from your LAN, or through the public hostname you configured for your own edge.\
+The **Admin** page configures the server itself. It opens on the local machine (`https://localhost/admin`, or tray icon → *Server Settings*). On a headless VPS, use an SSH port forward to reach the server's loopback address; do not expose its private listener or assume that a public reverse-proxy URL grants host access. The separate **Remote administration** password is for unlocking administration from supported LAN or rendezvous-tunnel peers, not ordinary public-domain visitors. See [VPS Admin access](docs/SELF_HOSTING.md#admin-access-from-a-remote-computer-or-vps).\
 Any other request to `/api/admin/*` gets **403**.
 
 It controls: admin **PIN**, active **sessions**, HTTP/HTTPS **ports**, **transport** (WebRTC/WSS), **Internet access**, and the **certificate token**.

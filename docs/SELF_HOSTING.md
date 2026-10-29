@@ -66,6 +66,40 @@ The admin password protects configuration changes; the PIN grants access to
 the web interface. Keep the named `mw-data` volume: it stores settings,
 certificates, paired hosts and the client identity.
 
+## Admin access from a remote computer or VPS
+
+For a headless Ubuntu VPS, create an SSH local port forward from your own
+computer to the server's loopback listener. This keeps the Admin interface off
+the public internet. Replace `ubuntu` and the example address with your VPS
+login and IP:
+
+```sh
+ssh -N -L 18080:127.0.0.1:80 ubuntu@203.0.113.10
+```
+
+Keep that SSH session open, then open
+[`http://localhost:18080/admin`](http://localhost:18080/admin) in a browser on
+your computer. The tunnel carries the connection over SSH; the application
+receives it on the VPS as a loopback request. You may instead use a private VPN
+such as Tailscale and access the server over that private network.
+
+If you use the hardened/public Compose deployment, its private HTTP listener is
+8080 rather than 80. Forward that port instead:
+
+```sh
+ssh -N -L 18080:127.0.0.1:8080 ubuntu@203.0.113.10
+```
+
+Then use the same local URL. Do **not** open port 8080 or 8443 in the VPS
+firewall or publish them to the internet. A public domain or reverse-proxy URL
+is for the web interface; it does not make a visitor a host-local Admin. The
+web-interface PIN and the Remote administration password are separate
+credentials: the PIN admits a browser session, while the password unlocks
+administration for supported LAN or rendezvous-tunnel peers. The password does
+not enable Admin access through an ordinary public-domain URL.
+`--enable-internet` is not a setting for exposing the Admin page on your
+public domain.
+
 ## Give the interface your own URL
 
 For private access, use the LAN address above or a private network such as

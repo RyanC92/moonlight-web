@@ -60,10 +60,11 @@ sudo docker exec     moonlightweb moonlightweb --new-pin
 sudo docker exec     moonlightweb moonlightweb --status
 ```
 
-`--status` prints the URL to open, the PIN, and what is still missing. Neither
-credential has a default, and neither is optional — see
-[First run](#first-run--the-pin-is-not-optional-here) for why a container gets
-no free pass.
+`--status` prints the URL to open, the PIN, and what is still missing. There are
+no built-in credential defaults. The PIN is needed for normal remote browser
+sessions; the separate Remote administration password unlocks administration
+from supported LAN or rendezvous-tunnel peers. A VPS SSH tunnel provides
+host-local access instead; see [Remote Admin access](#remote-admin-access-from-a-vps).
 
 ### 4. Pair a Sunshine machine and stream
 
@@ -105,13 +106,44 @@ server over the container's own loopback, which is why they are allowed to:
 docker exec -it moonlightweb moonlightweb --set-admin-password
 ```
 
-Without an admin password **the admin page cannot be opened from anywhere** —
-there is no built-in default, and the usual "you are on the machine itself"
-exemption does not apply to a container. The PIN grants streaming; the password
-grants administration.
+There is no built-in admin password. The PIN grants a browser session; the Remote administration password lets
+supported LAN or rendezvous-tunnel peers unlock administration. It does not
+enable Admin access through an ordinary public-domain URL. For a headless
+server, an SSH port forward to the server's loopback listener provides
+host-local access without exposing a port publicly; see
+[Remote Admin access](#remote-admin-access-from-a-vps).
 
 Accept the self-signed certificate warning on first connection — expected on a
 LAN, unless you configure your own domain and certificate.
+
+## Remote Admin access from a VPS
+
+From your own computer, open an SSH tunnel to the VPS. For the standard image
+above, forward its loopback HTTP listener on port 80:
+
+```sh
+ssh -N -L 18080:127.0.0.1:80 ubuntu@203.0.113.10
+```
+
+Replace `ubuntu` and the example IP with your VPS login and address. Keep the
+SSH command running, then open
+[`http://localhost:18080/admin`](http://localhost:18080/admin) in your local
+browser. The tunnel encrypts traffic between your computer and the VPS, and
+MoonlightWeb receives the request as loopback on the server. If prompted to
+sign in, use the current web-interface PIN.
+
+For the hardened/public Compose deployment, forward its private app listener
+instead:
+
+```sh
+ssh -N -L 18080:127.0.0.1:8080 ubuntu@203.0.113.10
+```
+
+The local URL remains the same. Keep ports **8080 and 8443 closed to public
+inbound traffic**; only SSH needs to be reachable for this method. A public
+domain/reverse proxy is not a substitute for this tunnel when you need
+host-local Admin access. For setup details, see the
+[self-hosting guide](../docs/SELF_HOSTING.md#admin-access-from-a-remote-computer-or-vps).
 
 ---
 

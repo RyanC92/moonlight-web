@@ -302,8 +302,10 @@ A request is treated as coming from the host only when the peer is one of this
 machine's own addresses **and** the `Host` header names a local host
 (`localhost`, `127.0.0.1`, `::1`, or a private/loopback IP literal —
 `RequestGuard.cpp:143`). Under `https://moonlight.example.com` the second
-condition is false, so the Admin page shows its **password unlock** prompt. That
-is correct, not a fault. A reverse proxy does not and must not turn the admin
+condition is false, so the app does not treat the browser as host-local.
+Ordinary public-domain visitors cannot unlock Admin with the remote
+administration password; that path is limited to supported LAN or
+rendezvous-tunnel peers. A reverse proxy does not and must not turn the admin
 page into a local one.
 
 Because `Host` carries that weight, one proxy mistake is worth naming: **never
@@ -318,6 +320,20 @@ else `Forwarded` (`AuthManager.cpp:397`), so a remote client stays remote even
 though the socket came from loopback. Keep those headers set by the edge only —
 Caddy and nginx both overwrite a client-supplied value, which is what the
 application expects.
+
+For host-local Admin access from another computer, use an SSH local forward to
+the app's loopback HTTP listener instead of trying to unlock through the public
+hostname:
+
+```sh
+ssh -N -L 18080:127.0.0.1:8080 user@your-vps
+```
+
+Keep the SSH connection open and browse to
+[`http://localhost:18080/admin`](http://localhost:18080/admin). Keep port 8080
+private; the edge and this SSH tunnel are the only paths that should reach it.
+See the [self-hosting VPS access guide](SELF_HOSTING.md#admin-access-from-a-remote-computer-or-vps)
+for the standard Docker listener and more detail.
 
 Consequences worth knowing:
 
