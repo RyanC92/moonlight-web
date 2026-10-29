@@ -42,7 +42,7 @@ const ORIGIN = 'https://stream.example.top';
 const bytesOf = (text) => new TextEncoder().encode(text);
 const textOf = (bytes) => new TextDecoder().decode(bytes);
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const crlf = (text) => text.replace(/\n/g, '\r\n');
+const crlf = (text) => text.replace(/\r?\n/g, '\r\n');
 
 /** The main page as a machine of that version serves it from disk. */
 function servedIndex(version = '0.4.1') {

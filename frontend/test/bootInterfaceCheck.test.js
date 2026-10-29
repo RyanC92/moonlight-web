@@ -41,7 +41,7 @@ const INDEX = readFileSync(join(REPO, 'frontend', 'index.html'), 'utf8')
     .join(VERSION);
 /** The main page as the tunnel serves it: CRLF, and the machine's name written in. */
 const SERVED_INDEX = INDEX.replace('content="MoonlightWeb"', 'content="MoonlightWeb [PC]"').replace(
-    /\n/g,
+    /\r?\n/g,
     '\r\n',
 );
 const OFFICIAL = {

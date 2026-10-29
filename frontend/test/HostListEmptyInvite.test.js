@@ -13,8 +13,8 @@ import { BackendClient } from '../js/api/BackendClient.js';
 
 // An empty host list is the one place where the answer is not on the page:
 // MoonlightWeb streams a machine, it does not make one streamable. So it names
-// what is missing and links to Sunshine — a link, never an install.
-describe('empty host list — the Sunshine invitation', () => {
+// what is missing and links to Vibeshine — a link, never an install.
+describe('empty host list — the Vibeshine invitation', () => {
     let view;
     let container;
 
@@ -48,7 +48,7 @@ describe('empty host list — the Sunshine invitation', () => {
         await view.refresh();
         expect(cta()).not.toBe(null);
         expect(link().getAttribute('href')).toBe(
-            'https://github.com/LizardByte/Sunshine/releases/latest',
+            'https://github.com/Nonary/vibeshine/releases/latest',
         );
         // Somebody else's site: opened away from this page, and told not to
         // hand it a handle back to us.

@@ -390,9 +390,17 @@ QString LogScrubber::scrubLine(QString line)
     line.replace(window, QStringLiteral("\\1") + kHidden);
 
     // ── Links that open this instance ────────────────────────────────────────
-    static const QRegularExpression rdv =
-        re(R"(\b((?:stream|app)(?:\.dev)?\.moonlightweb\.top)/(?!\(link\))([A-Za-z0-9_-]{6,}))");
+    static const QRegularExpression rdv = re(
+        R"(\b((?:stream|app)(?:\.dev)?(?:\.[A-Za-z0-9-]+){2,}(?::\d+)?)/(?!\(link\))([A-Za-z0-9_-]{6,}))");
     line.replace(rdv, QStringLiteral("\\1/(link)"));
+    static const QRegularExpression instanceCertificate =
+        re(R"(\b(CN=)([A-Za-z0-9-]+)((?:\.[A-Za-z0-9-]+){2,})\b)");
+    line = replaceEach(line, instanceCertificate, [](const QRegularExpressionMatch& m) {
+        const QString label = m.captured(2);
+        const QString replacement =
+            projectLabels().contains(label.toLower()) ? label : QStringLiteral("instance");
+        return m.captured(1) + replacement + m.captured(3);
+    });
     static const QRegularExpression share(
         QStringLiteral(R"((?<![A-Za-z0-9_])/p/[A-Za-z0-9_-]{6,})"));
     line.replace(share, QStringLiteral("/p/(link)"));
