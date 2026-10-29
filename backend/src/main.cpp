@@ -610,14 +610,10 @@ static const char* kCliInternetConsent =
     "network. While the link is on, your router is asked (UPnP) to open a "
     "streaming port during each session, and whoever connects reaches this "
     "machine directly - each side of a peer-to-peer connection sees the "
-    "other's public IP address. A future update will add an outgoing "
-    "connection to the MoonlightWeb introduction server, which then sees this "
-    "machine's public IP address and when it is online. No public DNS record "
-    "is created, no certificate is issued for this machine, and ports 80/443 "
-    "are not opened. You can turn the link off at any time from the Admin "
-    "page. (An instance that already holds a sub-domain under the upstream project keeps it,
-    "and its existing behaviour, until the announced shutdown of the DNS service in 
-    "February 2027.)";
+    "other's public IP address. This does not publish the web interface, create "
+    "a public DNS record, or issue a certificate. To make the web interface "
+    "available remotely, configure your own HTTPS reverse proxy separately. "
+    "You can turn this feature off at any time from the Admin page.";
 
 // stdin is a terminal — i.e. there is a human who can answer a prompt.
 static bool stdinIsInteractive()

@@ -5,14 +5,24 @@ Changes in this repository relative to upstream
 does not publish a changelog, so this file is the record of what this fork adds
 and, just as importantly, what it does **not** change.
 
-The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
-`docker/docker-compose.yml`, `backend/` and `frontend/` keep their behaviour.
+The fork retains upstream copyright and attribution, but maintains its own
+distribution links, deployment guidance and targeted fixes. Do not assume its
+files or behavior are otherwise identical to upstream.
 
 ---
 
 ## [Unreleased] — hardened container deployment
 
 ### Added
+
+**Fork distribution and self-hosting**
+
+- `docs/SELF_HOSTING.md` — setup for running the web server and interface on a
+  gaming PC or separate Docker host, with private-LAN and own-domain options.
+- Fork-specific repository/package links and privacy notes in the READMEs,
+  Docker guide, security guidance and packaging metadata.
+- Manual-only inherited Pages/bootstrap workflows until this fork configures
+  its own endpoints and Pages domain.
 
 **Container**
 
@@ -34,9 +44,9 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   VM's namespace, so a browser on Windows or macOS cannot reach the container at
   `localhost`. It forwards raw TCP, adds no control, and is not part of the
   deployment. It does **not** make WebRTC media work.
-- `docs/BACKLOG.md` — requested changes that are not implemented yet (ViBeShine
-  download link, rebrand, removal of upstream infrastructure references), plus
-  the admin-unlock finding and its fix.
+- `docs/BACKLOG.md` — remaining work (ViBeShine download link, marketing-site
+  rebrand and remaining upstream infrastructure references), plus the
+  admin-unlock finding and its fix.
 
 **Public deployment** (one owner, their own hosts — `docs/PUBLIC.md`)
 
@@ -129,11 +139,9 @@ The upstream tree is otherwise untouched: `Dockerfile`, `docker/entrypoint.sh`,
   allocated 997:996 in the first build and 999:999 after removing two packages,
   which left the rebuilt image unable to write its own volume. Rebuilds now
   keep ownership; `scripts/backup.sh --restore` also chowns the restored tree.
-- `docker/README.md` gained a pointer to the hardened variant at the top. The
-  upstream instructions below it are unchanged and still describe the official
-  image.
-- `README.md`'s Docker section points at the hardened variant and its docs. The
-  upstream quick-start remains as-is.
+- The Docker reference and root README now use this fork's GHCR image path and
+  explain that a self-hosted web interface needs the operator's own public
+  hostname and TLS edge.
 
 - `docs/DEPLOY.md` §6.1 explains the admin page behind a reverse proxy: the
   local-privilege test needs a local peer **and** a local `Host`, so the password

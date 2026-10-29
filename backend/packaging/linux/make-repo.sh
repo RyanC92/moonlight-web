@@ -209,7 +209,7 @@ sudo dnf install moonlightweb</code></pre>
 <h2>Everything else</h2>
 <p>Arch and derivatives: <code>moonlightweb-bin</code> on the AUR. Immutable
    distros (SteamOS, Bazzite): the AppImage from the
-   <a href="https://github.com/linckosz/moonlight-web/releases">releases page</a>.
+   <a href="https://github.com/RyanC92/moonlight-web/releases">releases page</a>.
    Or run <code>curl -fsSL https://example.com/install.sh | bash</code>,
    which picks the right one for you.</p>
 EOF

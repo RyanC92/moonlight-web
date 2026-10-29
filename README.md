@@ -6,13 +6,11 @@
 
 **Stream your PC games from any browser.**\
 Install it on the gaming PC — it captures and encodes that machine **itself**, no second streaming server to set up.\
-Nothing to install on the client either: just a URL, from your LAN or from anywhere.\
+Nothing to install on the client either: open the server's LAN URL, or configure your own secure public URL.\
 Under **20 ms** glass‑to‑glass over Wi‑Fi on a LAN, ~**25 ms** over the Internet.
 
-**Self-hosted fork** - deploy behind your own domain. See [docs/PUBLIC.md](docs/PUBLIC.md) and [docs/EDGE.md](docs/EDGE.md).
-**💬 Community: [Discord](https://discord.gg/wfbesPx4UB)** — questions, help and new‑release announcements
+**Self-hosted fork** — MoonlightWeb serves its own web interface and API. Run it on your gaming PC or on a separate server, and optionally put your own HTTPS proxy/domain in front of it. Start with [the self-hosting guide](docs/SELF_HOSTING.md).
 
-[![Discord](https://img.shields.io/badge/Discord-join%20the%20chat-5865F2?logo=discord&logoColor=white)](https://discord.gg/wfbesPx4UB)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 ![Qt](https://img.shields.io/badge/Qt-6.11-41CD52?logo=qt&logoColor=white)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
@@ -27,7 +25,7 @@ Under **20 ms** glass‑to‑glass over Wi‑Fi on a LAN, ~**25 ms** over the In
 
 Moonlight‑Web turns your gaming PC into a stream, and **any device with a modern browser** (PC, Mac, tablet, phone, TV) into the client. Only the server gets installed.
 
-*Moonlight‑Web ([your domain](https://your domain/)) and [moonlight-web-stream](https://github.com/MrCreativ3001/moonlight-web-stream) are two separate projects with close names: moonlight-web-stream is a web client for a Sunshine host; Moonlight‑Web streams the PC it is installed on by itself, and pairs with Sunshine too.*
+*Moonlight‑Web and [moonlight-web-stream](https://github.com/MrCreativ3001/moonlight-web-stream) are separate projects with similar names. Moonlight‑Web runs its own server and streams the machine it is installed on; it can also pair with Sunshine-compatible hosts.*
 
 - 🖥️ **Its own capture & encode engine** — the machine it runs on is a host straight away: no Sunshine, no pairing, no PIN. One card per display. Windows, Linux and macOS.
 - 🎮 **Low‑latency streaming** up to 4K HDR, 240 FPS, **H.264 / HEVC / AV1**, on **NVENC · AMF · Quick Sync · VA‑API · VideoToolbox** (software fallback).
@@ -35,7 +33,7 @@ Moonlight‑Web turns your gaming PC into a stream, and **any device with a mode
 - 🔊 **Opus audio**, adaptive jitter buffer, stereo.
 - ⌨️🖱️🎮 **Full input**: keyboard, mouse (pointer‑lock), touch trackpad, **Xbox/PS gamepads** with rumble. On Windows it reaches the lock screen and UAC prompts too, and **Ctrl+Alt+Del** works from the touch keyboard bar (Ctrl, Alt, then Del). A Windows PC with no mouse plugged in shows its pointer in the stream too. **Racing wheels, flight sticks and RC radios** too, as an Xbox pad or sent to the game as themselves, force feedback included ([see below](#controllers)).
 - 🤝 **Pairs with other hosts too** — Sunshine/Apollo, Wolf, MultiSeat: [see below](#other-hosts-it-can-pair-with). mDNS discovery, PIN pairing, multi‑host.
-- 🌍 **Internet access** opt‑in, at a `your own domain/「id」` address, with nothing published in your name.
+- 🌍 **Self-hosted access** — use the built-in web interface on your LAN, or put your own TLS-terminating reverse proxy/domain in front of it.
 - 🪄 **Video Enhancement** (bonus): GPU upscaling & sharpening in the browser.
 - 👥 **Session sharing**: invite up to 3 people as viewer, gamepad player or full control.
 
@@ -54,7 +52,7 @@ Moonlight‑Web turns your gaming PC into a stream, and **any device with a mode
 ## How it works
 
 1. **Install the server on the gaming PC.**
-2. **Open a browser** at `https://localhost`, at the PC's LAN IP, or at your [entry link](#internet-access) from outside.
+2. **Open a browser** at `https://localhost`, at the PC's LAN IP, or at the public URL you configured for your own edge.
 3. **The PC is already in the list** as `<hostname> — MoonlightWeb Host`, one card per display. Nothing to pair.
 4. **Click a display and stream.** Other hosts on the LAN are discovered next to it and can be [paired too](#other-hosts-it-can-pair-with).
 
@@ -194,7 +192,7 @@ Each player row gives **a link and a 6‑digit PIN**. Send them separately: the 
 
 ## Install
 
-Grab the installer from the **[latest release](https://github.com/linckosz/moonlight-web/releases/latest)** or **[GitHub Releases](https://github.com/linckosz/moonlight-web/releases/latest)**, which picks the right file. Guides with screenshots: [Windows](docs/DEPLOY.md) · [macOS](docs/DEPLOY.md) · [Linux](docs/DEPLOY.md).
+Download only builds published by this fork from [GitHub Releases](https://github.com/RyanC92/moonlight-web/releases). If no release is listed, use the source-build instructions below or deploy the Docker image when a release image is available. Do not install packages or scripts from the upstream project unless you intentionally want that project.
 
 > ✅ **Nothing else to install.** Install it **on the gaming PC** — that is the whole setup.
 
@@ -220,12 +218,7 @@ Sunshine is no longer installed (since September 2026); an existing Sunshine is 
 
 **`moonlightweb-<version>-macos-arm64.pkg`** — installs to `/Applications` with an optional **start at login**.
 
-The `.pkg` is not notarized, so a downloaded copy is blocked by Gatekeeper. Either command installs it without the prompt:
-
-```sh
-brew install --cask linckosz/tap/moonlightweb
-curl -fsSL https://github.com/linckosz/moonlight-web/releases/latest | bash
-```
+Use a `.pkg` only if one is attached to a release in this fork. This fork does not maintain the upstream Homebrew tap or installer script.
 
 For a downloaded file on macOS 15+: *System Settings → Privacy & Security → **Open Anyway***, or `xattr -dr com.apple.quarantine ~/Downloads/moonlightweb-*.pkg`.
 
@@ -234,15 +227,7 @@ For a downloaded file on macOS 15+: *System Settings → Privacy & Security → 
 
 ### Linux (x64)
 
-**One command, updates included:**
-
-```sh
-curl -fsSL https://github.com/linckosz/moonlight-web/releases/latest | bash
-```
-
-It adds the signed **APT** or **DNF** repository, so MoonlightWeb updates with the system and appears in GNOME Software, KDE Discover and App Center. Arch uses [`moonlightweb-bin`](https://aur.archlinux.org/packages/moonlightweb-bin) from the AUR. Manual setup: [Linux guide](docs/DEPLOY.md#one-line-install).
-
-Or install a package directly. All are **self‑contained** (Qt + OpenSSL bundled), install to `/opt/moonlightweb`, open the firewall ports (80/tcp, 443/tcp, 48550‑48573/udp) and start the app.
+If a Linux package is attached to a release in this fork, use that package and follow its release notes. The upstream APT/DNF repositories and AUR package are not managed by this fork.
 
 | Distro family | Package | Command |
 |---|---|---|
@@ -264,15 +249,18 @@ Or install a package directly. All are **self‑contained** (Qt + OpenSSL bundle
 
 ### Docker — servers, NAS boxes and mini PCs
 
-Official **`linux/amd64` + `linux/arm64`** images on GHCR, for a headless box (Raspberry Pi, N100, NAS) on the gaming PC's LAN.
+The container runs the web interface and API on a headless Linux server. It is useful when you want a separate always-on machine to pair with Sunshine-compatible hosts; it does not capture the container's screen. A tagged release publishes `linux/amd64` and `linux/arm64` images to this fork's GitHub Container Registry package:
+
+After this fork has published its first container release and the GHCR package is public, pull the image and start it:
 
 ```sh
+docker pull ghcr.io/ryanc92/moonlight-web:latest
 docker run -d --name moonlightweb \
   --network host \
   --cap-drop ALL --cap-add NET_BIND_SERVICE \
   -v mw-data:/data \
   --restart unless-stopped \
-  ghcr.io/linckosz/moonlight-web:latest
+  ghcr.io/ryanc92/moonlight-web:latest
 ```
 
 ```sh
@@ -308,7 +296,7 @@ caveats).
 
 **This image cannot host a screen**: add the gaming PC from the hosts page instead.
 
-Full reference — ports, volume, backups, non‑root, systemd, troubleshooting: **[`docker/README.md`](docker/README.md)**.
+Full setup, reverse-proxy/domain options, ports, backups and troubleshooting: [self-hosting guide](docs/SELF_HOSTING.md) and [Docker reference](docker/README.md).
 
 ### First launch (all platforms)
 
@@ -336,7 +324,7 @@ Browser‑side image enhancement on the GPU (WebGL2, or WebGPU in HDR): **upscal
 
 ## Admin page
 
-The **Admin** page configures the server itself. It opens on the local machine (`https://localhost/admin`, or tray icon → *Server Settings*), and on another device only once you set a **Remote administration** password: from your LAN, or through your entry link if you tick that too.\
+The **Admin** page configures the server itself. It opens on the local machine (`https://localhost/admin`, or tray icon → *Server Settings*), and on another device only once you set a **Remote administration** password: from your LAN, or through the public hostname you configured for your own edge.\
 A remote device that has passed the PIN may **read** the page, which is how it draws its own unlock prompt; every **change** needs the password first, and an unauthenticated request to `/api/admin/*` gets **403**.
 
 It controls: admin **PIN**, active **sessions**, HTTP/HTTPS **ports**, **transport** (WebRTC/WSS), **Internet access**, and the **certificate token**.
@@ -349,18 +337,7 @@ It controls: admin **PIN**, active **sessions**, HTTP/HTTPS **ports**, **transpo
 
 ### Internet access
 
-**Internet Access is opt‑in, off by default.** While it is on, the server:
-
-1. **Detects your public IP** over STUN (ours first, `your own domain:3478`, then Google/Cloudflare) and reports CGNAT or double NAT. A LAN stream uses no STUN at all.
-2. **Opens ports on the router via UPnP**: one per stream slot, kept from one stream to the next (an invited player's closes when they leave), and up to four for the entry link's tunnel. The two peers see each other's public IP.
-
-Nothing is published: **no DNS record, no certificate, ports 80/443 stay closed**. Turning it off closes the entry link at once, and the next streams announce no public address; the router ports already opened stay mapped until MoonlightWeb quits.
-
-**Remote access.** Your PC keeps one outgoing connection to an introduction server and is reached at `https://your own domain/「id」` (shown on the admin page and in the tray). Visitors still need the access PIN.
-
-The browser loads a few kilobytes of entry page, opens WebRTC straight to your machine, checks its identity key, then loads the interface and API over that connection. Video never touches the server. The entry page is [published byte for byte](your own domain) and [checked on a schedule](.github/workflows/bootstrap-watch.yml).
-
-**Installs from v0.2.4 or earlier** keep their `「id」.your domain` sub‑domain and forwards **until February 2027**, as the admin page notes.
+Internet Access and the rendezvous service depend on a separately operated service; this fork does not provide a shared hosted entry point. For a web interface reachable through your own hostname, run the app yourself and configure your own reverse proxy or tunnel. See [Self-hosting](docs/SELF_HOSTING.md), [public deployment](docs/PUBLIC.md) and [edge configuration](docs/EDGE.md). Do not expose the app's internal HTTP port directly to the internet.
 
 <div align="center">
 
@@ -375,40 +352,24 @@ The browser loads a few kilobytes of entry page, opens WebRTC straight to your m
 ## Architecture
 
 ```
-      BROWSER (any device, anywhere)                RENDEZVOUS SERVER
+             BROWSER (any device)                 YOUR SERVER / GAMING PC
  ┌────────────────────────────────────┐        ┌────────────────────────────┐
- │  Entry page (a few KB)             │ https  │  your own domain   │
- │  Web App (Vanilla JS)              │◄──────►│  · serves the entry page   │
- │  Video : WebCodecs + WebGPU        │  SDP   │  · passes SDP / ICE along  │
- │  Audio : Opus / WebRTC track       │  ICE   │  · never sees your video   │
- │  Input : kbd / mouse / gamepad     │        └─────────────┬──────────────┘
- │  Video Enhancement (GPU)           │                      │ ONE outgoing
- └─────────────────┬──────────────────┘                      │ connection,
-                   │                                         │ held open by
-                   │  WebRTC — peer to peer, DTLS encrypted  │ your PC. No
-                   │  video · audio · input · the whole REST │ open port, no
-                   │  API. WSS fallback on hostile networks. │ DNS record.
-                   ▼                                         ▼
- ┌────────────────────────────────────────────────────────────────────────┐
- │  YOUR GAMING PC — MoonlightWeb server (C++/Qt)                         │
- │  HTTP :80 → HTTPS :443 · static files · REST API · session manager     │
- │                                                                        │
- │  ┌──────────────────────────────┐    ┌──────────────────────────────┐  │
- │  │  NATIVE ENGINE (default)     │    │  moonlight-common-c          │  │
- │  │  capture  DXGI · WGC         │    │  for the hosts you PAIR with │  │
- │  │           KMS · ScreenCast   │ or │  RTSP / RTP / ENet  ────────►│  │
- │  │           ScreenCaptureKit   │    │  Sunshine · Wolf · MultiSeat │  │
- │  │  encode   NVENC · AMF · QSV  │    └──────────────────────────────┘  │
- │  │           VA-API · VideoTB   │                                      │
- │  │  audio    WASAPI · PipeWire  │    zero-copy: capture → encode →     │
- │  │           SCK tap   → Opus   │    fragment → DTLS → browser         │
- │  └──────────────────────────────┘    (no loopback, no RTP, no FEC)     │
- └────────────────────────────────────────────────────────────────────────┘
+ │  Web UI + WebCodecs/WebGPU          │◄─HTTPS─│  MoonlightWeb web server   │
+ │  Audio : Opus / WebRTC              │◄─WSS───│  static files + REST API   │
+ │  Input : keyboard / mouse / pad     │◄─UDP───│  WebRTC signalling + media │
+ └─────────────────┬──────────────────┘        └─────────────┬──────────────┘
+                   │                                         │
+                   └──────────── WebRTC / WSS ───────────────┘
+                                                             │
+                                          ┌──────────────────┴─────────────┐
+                                          │ Native capture/encode, or      │
+                                          │ paired Sunshine-compatible host│
+                                          └────────────────────────────────┘
 ```
 
 The server is a **web server** (frontend + REST API), a **streaming engine** for its own machine, and a **bridge** to paired GameStream hosts. Video and Opus audio reach the browser over **WebRTC**, with **WSS** fallback.
 
-**The rendezvous server introduces, it does not relay.** After the entry page, everything flows peer to peer. On the LAN, `https://<PC-LAN-IP>` skips it entirely. Its domain is served by the DNS stack in [`deploy/powerdns/`](deploy/powerdns/) — the server your tips help keep alive.
+The frontend is served by MoonlightWeb itself; it is not a standalone static site that can be hosted independently. For a custom URL, place your own HTTPS edge in front of the app and preserve the proxy requirements in [docs/EDGE.md](docs/EDGE.md). For a LAN-only setup, open the app's HTTPS address directly.
 
 Paired hosts get their input AES‑128‑GCM encrypted over **ENet**, as GameStream requires. The native engine relies on DTLS alone.
 
@@ -433,25 +394,23 @@ Restart the server after a manual edit. Every key is described in the [settings 
 
 `native_host_enabled` (default `true`) shows this machine as a host. Set it to `false` to use MoonlightWeb only as a front end for Sunshine, Wolf or your own rig; the engine stays installed.
 
-#### Update check & version counts
+#### Update checks and session metrics
 
-Every few hours, official builds check for updates through `https://updates.{MW_DOMAIN}`, a mirror of the GitHub release that counts **version, OS and architecture** only.
+The update check reads the latest release from this fork's GitHub repository.
+When no release has been published, there is no fork release for the app to
+offer. An optional update relay can be configured at build time with
+`MW_DOMAIN` and `MW_PDNS_TOKEN`; this fork does not provide a shared relay.
 
-`"update_relay_enabled": false` asks GitHub directly and reports nothing. `MW_NO_TELEMETRY=1` disables the check entirely. Self‑compiled builds never use the relay.
+Session metrics are sent only when metrics are enabled and the build includes
+both `MW_DOMAIN` and `MW_PDNS_TOKEN`. The default Docker build has neither, so
+it does not send session metrics to a project endpoint. A custom build that
+sets them sends aggregate stream details (such as resolution, codec and
+transport), not host names, account names, pairing identities or IP addresses.
 
-#### Session counts
-
-At the start and end of a stream, official builds send its **shape** to `https://metrics.{MW_DOMAIN}`: resolution, frame rate, codec, HDR/4:4:4, bitrate band, backend, transport, LAN or Internet, device class, owner or guest, and duration.
-
-Never sent: host name, account, pairing identity, **the application launched**, or any address (only a daily‑rotating hash is kept). Every value is a number or a fixed word.
-
-#### No question is put to you, and you can switch it off
-
-Neither count identifies anyone, and nothing is written to the viewer's device, so there is no consent banner.
-
-**Settings → Privacy** lists what is sent and switches it off instantly; nothing else changes. Every signed‑in user sees it, and guests see it from the **Cookies** button of their join page. Only a local session can change it.
-
-Under the hood the switch writes `"session_metrics_enabled"` and `"update_relay_enabled"`; `MW_NO_TELEMETRY=1` overrides both. A leftover `metrics_consent` is ignored.
+The Admin page's **Privacy** settings control update-relay and session-metrics
+preferences. `MW_NO_TELEMETRY=1` disables both update checks and metrics.
+Location lookup is separate, off by default, and sends a visitor's IP to
+`ipwho.is` only when `session_location_enabled` is turned on.
 
 #### Where a session came from
 
@@ -480,7 +439,7 @@ Cross‑platform build via **CMake** — the single, canonical build system (qma
 CMake also generates `compile_commands.json` for clangd / IDEs.
 
 ```bash
-git clone https://github.com/linckosz/moonlight-web.git
+git clone https://github.com/RyanC92/moonlight-web.git
 cd moonlight-web
 git submodule update --init --recursive   # moonlight-common-c, qmdnsengine, libdatachannel...
 
@@ -499,7 +458,7 @@ cmd //c backend/build_msvc.bat
 
 👉 **Full developer setup** — tools, Qt components, **Qt Creator** kit, frontend tests and the PR workflow — is in **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
-### LAN‑only dev environment for a fork (with Claude Code)
+### LAN‑only development environment
 
 **[`CLAUDE-LAN-DEV-SETUP.md`](CLAUDE-LAN-DEV-SETUP.md)** is a setup plan for **Claude Code (Opus)** that builds a full dev environment on one PC, **Windows 11 Home included**, with no VM, Docker, domain or Internet access. The instance runs with `MW_LAN_ONLY=1` and is reached by IP on your LAN.
 
@@ -510,36 +469,11 @@ cmd //c backend/build_msvc.bat
 
 Linux and macOS work too; the file lists what differs.
 
-**DNS stack (rendezvous server).** [`deploy/powerdns/`](deploy/powerdns/) is a turnkey Docker stack (dnsdist + PowerDNS + Caddy) a fork can run for its own users. It also serves v0.2.4 sub‑domains until **February 2027**.\
-Install on a small Linux VM with `sudo ./install.sh`, open ports 53 (UDP/TCP), 80 and 443, register your nameservers, then set `MW_DOMAIN` in the app's `.env`. See [`deploy/powerdns/README.md`](deploy/powerdns/README.md).
-
 ---
 
-## About the author
+## About this fork
 
-I'm a web developer with **15+ years** of experience and a long‑time **Moonlight** contributor: I built and upstreamed **Video Super Resolution** (real‑time GPU upscaling) in every major Moonlight client. Moonlight‑Web brings that low‑latency streaming to any browser.
-
-| Platform | Contribution |
-|---|---|
-| **Windows (x64 / ARM), Linux, macOS** | [moonlight‑qt #1557](https://github.com/moonlight-stream/moonlight-qt/pull/1557) |
-| **Android** | [moonlight‑android #1567](https://github.com/moonlight-stream/moonlight-android/pull/1567) |
-| **iOS & tvOS** | [moonlight‑ios #704](https://github.com/moonlight-stream/moonlight-ios/pull/704) |
-| **Xbox** | [moonlight‑xbox #267](https://github.com/TheElixZammuto/moonlight-xbox/pull/267) |
-
----
-
-## Support
-
-If MoonlightWeb is useful to you,\
-a coffee helps keep the shared servers online and the domain running 🙏
-
-<div align="center">
-
-<a href="https://buymeacoffee.com/brunoocto">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48">
-</a>
-
-</div>
+This repository is a community-maintained fork of [linckosz/moonlight-web](https://github.com/linckosz/moonlight-web). The upstream project's copyright and GPL license notices are retained; see [COPYRIGHT](COPYRIGHT) and [LICENSE](LICENSE). Issues and changes for this fork belong in [RyanC92/moonlight-web](https://github.com/RyanC92/moonlight-web).
 
 ---
 
@@ -555,6 +489,6 @@ See [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT) for third‑party component li
 
 <div align="center">
 
-**Like this project?** Leave a ⭐, [join the Discord](https://discord.gg/wfbesPx4UB) 💬 and [buy the servers a coffee](#support) ☕
+**Like this project?** Leave a ⭐ and report bugs or request changes through this repository's GitHub issues.
 
 </div>

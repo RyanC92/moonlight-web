@@ -187,7 +187,19 @@ function main(argv) {
             return 1;
         }
         let bad = 0;
+        const taggedVersions = new Set(
+            git(['tag', '--list', 'v[0-9]*'])
+                .toString('utf8')
+                .split(/\r?\n/)
+                .filter((tag) => tag.startsWith('v'))
+                .map((tag) => tag.slice(1))
+                .filter(isRelease),
+        );
         for (const version of versions.sort()) {
+            if (version !== release && !taggedVersions.has(version)) {
+                console.log(`skip  ${version} (no v${version} tag yet)`);
+                continue;
+            }
             const ref = version === release ? 'HEAD' : `v${version}`;
             let fresh;
             try {

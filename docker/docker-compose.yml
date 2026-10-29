@@ -22,7 +22,7 @@
 # =============================================================================
 services:
   moonlightweb:
-    image: ghcr.io/linckosz/moonlight-web:latest
+    image: ghcr.io/ryanc92/moonlight-web:latest
     container_name: moonlightweb
     restart: unless-stopped
     network_mode: host

@@ -43,7 +43,7 @@
 # ===========================================================================
 set -eu
 
-REPO="${MW_REPO:-linckosz/moonlight-web}"
+REPO="${MW_REPO:-RyanC92/moonlight-web}"
 # Where the signed apt/dnf repositories built by the `linux-repo` job are
 # served from. Not a Pages site any more: Pages is one site per repository and
 # the bootstrap already owns it — the package tree raced it after every tag

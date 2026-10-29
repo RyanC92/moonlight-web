@@ -6,21 +6,14 @@
 # is different: hosting it apart from the rendezvous server is the whole point,
 # since it is the only code a browser ever loads from a server.
 #
-# Triggers: release tags, and nothing on main. The copy published here is the
-# reference the watchdog (bootstrap-watch.yml) compares the live entry page
-# against, and the live entry page is served from a checkout that follows
-# tags — so this must publish exactly what a tag holds, and publish it when the
-# tag exists, not when main moves. Two tag families: `v*` is an application
-# release; `srv-*` is a server-only correction that ships between releases and
-# deliberately does not trigger release.yml. Anything else is `main`, which now
-# reaches only the staging rendezvous.
+# The inherited Pages deployment is not enabled for this fork: its CNAME is a
+# placeholder and the shared bootstrap/rendezvous service is not operated here.
+# Keep deployment manual so an application release cannot publish that page
+# accidentally. Configure this fork's Pages domain and content before enabling
+# an automatic trigger.
 name: bootstrap-pages
 
 on:
-  push:
-    tags:
-      - "v*"
-      - "srv-*"
   workflow_dispatch:
 
 permissions:

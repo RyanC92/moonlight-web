@@ -1,7 +1,6 @@
 #!/bin/sh
 # Acceptance check for a DEPLOYED rendezvous server.
 #
-#   ./smoke.sh                                  # https://stream.moonlightweb.top
 #   ./smoke.sh https://stream.example.top
 #   ./smoke.sh https://stream.mw.local:8443 -k  # lab, self-signed
 #
@@ -13,8 +12,8 @@
 # Exits non-zero on the first failed expectation.
 set -eu
 
-BASE="${1:-https://stream.moonlightweb.top}"
-shift 2>/dev/null || true
+BASE="${1:?Usage: ./smoke.sh https://your-rendezvous-host [curl options]}"
+shift
 CURL_EXTRA="$*"
 
 # shellcheck disable=SC2086

@@ -6,7 +6,7 @@ built image; anything not exercised is called out as such.
 
 - Image: `moonlightweb-hardened:latest`
 - Verified on: Docker 29.9.2, Docker Compose v5.6.1, Debian trixie base
-- Upstream layout: **host networking** (required for WebRTC, mDNS, UPnP)
+- Network layout: **host networking** (recommended for WebRTC, mDNS and UPnP)
 
 ---
 
@@ -47,7 +47,7 @@ built image; anything not exercised is called out as such.
 ## 2. Build
 
 ```bash
-git clone https://github.com/linckosz/moonlight-web.git
+git clone https://github.com/RyanC92/moonlight-web.git
 cd moonlight-web
 docker build -f docker/Dockerfile.hardened -t moonlightweb-hardened:latest .
 ```

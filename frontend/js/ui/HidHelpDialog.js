@@ -31,7 +31,7 @@ import { escapeHtml } from '../util/escapeHtml.js';
 
 /** The wiki's section: which hosts take a device as itself, and how. */
 export const HID_HELP_URL =
-    'https://github.com/linckosz/moonlight-web/blob/main/docs/wiki/04-Frontend.md#49-wheels-and-radios-as-themselves';
+    'https://github.com/RyanC92/moonlight-web/blob/main/docs/wiki/04-Frontend.md#49-wheels-and-radios-as-themselves';
 
 /**
  * @param {'windows'|'macos'|'none'} kind why this page's host cannot

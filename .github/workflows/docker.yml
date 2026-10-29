@@ -1,4 +1,4 @@
-# MoonlightWeb — official container images.
+# MoonlightWeb container images.
 #
 # Publishes a multi-architecture image to the GitHub Container Registry:
 #
@@ -19,11 +19,8 @@
 # publishes nothing at all, and nobody following `latest` can end up on work in
 # progress. Testing a development build is a deliberate act: run this workflow
 # by hand with `publish` ticked, and it lands in the -dev package instead.
-# GHCR creates a new package PRIVATE, so that one needs `docker login ghcr.io`
-# to pull at all — not merely unadvertised, unreachable without credentials.
-# Measured: an anonymous tags/list answers 200 on moonlight-web and 403 on
-# moonlight-web-dev. Still worth confirming in Package settings after the very
-# first push, since the public package ended up public without being asked to.
+# GHCR package visibility must be checked after the first push; make the release
+# package public in GitHub Packages if anonymous pulls are intended.
 #
 # Triggers, and why each one is here:
 #

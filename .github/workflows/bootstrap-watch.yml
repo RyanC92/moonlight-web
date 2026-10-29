@@ -1,4 +1,4 @@
-# Watches the live entry page against the copy that was published.
+# Optional integrity check for an operator-managed entry page.
 #
 # The bootstrap is the one piece of this project's code a browser ever loads
 # from a server. Everything else — the interface, the API, the video — comes
@@ -7,9 +7,8 @@
 # is that the bytes are few, identical for everyone, published with their
 # digests, and compared on a schedule by something that is not the server.
 #
-# This is that comparison. It fetches every bootstrap file from the rendezvous
-# host and from the reference copy on GitHub Pages and requires them to be
-# byte-identical.
+# This fork does not operate the upstream rendezvous or Pages site, so the
+# check is manual and requires the operator's own endpoint URLs.
 #
 # Be precise about what it buys, because it is easy to overstate:
 #
@@ -26,25 +25,11 @@
 # believed. What it always means is that the published record and the live site
 # disagree, and that is worth a human looking.
 #
-# Both sides follow TAGS, not main: Pages publishes on a release tag
-# (pages.yml), the production box is moved to that tag by deploy-prod.sh. So
-# the file list and the expected digests come from the latest release tag, and
-# a file that exists on main but is not yet released is, correctly, not
-# expected anywhere.
+# When configured, both sides should serve the same bootstrap from a release
+# tag, not from an unreviewed branch.
 name: bootstrap-watch
 
 on:
-  schedule:
-    # Every 6 hours. GitHub runs scheduled jobs on a best-effort basis and
-    # skews them under load, so treat the interval as "about 6 hours", not
-    # as a guarantee — the window an unnoticed swap could live in is the honest
-    # number to quote, and it is larger than the cron line suggests. This only
-    # bounds the untargeted case (see the header comment); tightening it below
-    # 30 minutes bought nothing precision-wise, and the repo is public so the
-    # old interval cost nothing either — 6 hours was chosen purely to cut how
-    # often a stale-tag false alarm (or a real one) pages a human, not because
-    # a wider window was judged safe on its own merits.
-    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -58,9 +43,16 @@ jobs:
   compare:
     runs-on: ubuntu-latest
     env:
-      LIVE: https://stream.example.com
-      REFERENCE: https://app.example.com
+      LIVE: ${{ vars.BOOTSTRAP_LIVE_URL }}
+      REFERENCE: ${{ vars.BOOTSTRAP_REFERENCE_URL }}
     steps:
+      - name: Require operator-managed endpoints
+        run: |
+          if [[ -z "$LIVE" || -z "$REFERENCE" ]]; then
+            echo "::error::Set BOOTSTRAP_LIVE_URL and BOOTSTRAP_REFERENCE_URL repository variables before running this check."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # the latest release tag is what the live page must match

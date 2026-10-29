@@ -9,7 +9,7 @@
 CMake is the **single canonical build system** (qmake was removed 2026-06-28). Prerequisites and Qt-Creator setup are in `CONTRIBUTING.md`; the short version:
 
 ```bash
-git clone https://github.com/linckosz/moonlight-web.git && cd moonlight-web
+git clone https://github.com/RyanC92/moonlight-web.git && cd moonlight-web
 git submodule update --init --recursive     # moonlight-common-c, qmdnsengine, libdatachannel, miniupnp, opus, openh264
 
 # Windows (MSVC): detects VS 2022 + Qt, configures Ninja, builds Release

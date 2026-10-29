@@ -45,12 +45,11 @@
 
   <launchable type="desktop-id">top.moonlightweb.MoonlightWeb.desktop</launchable>
 
-  <url type="homepage">https://example.com/</url>
-  <url type="bugtracker">https://github.com/linckosz/moonlight-web/issues</url>
-  <url type="help">https://example.com/guides/linux.html</url>
-  <url type="faq">https://example.com/faq.html</url>
-  <url type="vcs-browser">https://github.com/linckosz/moonlight-web</url>
-  <url type="donation">https://buymeacoffee.com/brunoocto</url>
+  <url type="homepage">https://github.com/RyanC92/moonlight-web</url>
+  <url type="bugtracker">https://github.com/RyanC92/moonlight-web/issues</url>
+  <url type="help">https://github.com/RyanC92/moonlight-web/blob/main/docs/SELF_HOSTING.md</url>
+  <url type="faq">https://github.com/RyanC92/moonlight-web/issues</url>
+  <url type="vcs-browser">https://github.com/RyanC92/moonlight-web</url>
 
   <developer id="top.moonlightweb">
     <name>MoonlightWeb</name>
@@ -113,7 +112,7 @@
 
   <releases>
     <release version="@MW_VERSION@" date="@MW_DATE@">
-      <url type="details">https://github.com/linckosz/moonlight-web/releases</url>
+      <url type="details">https://github.com/RyanC92/moonlight-web/releases</url>
     </release>
   </releases>
 </component>

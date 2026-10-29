@@ -24,7 +24,7 @@ pkgbase = moonlightweb-bin
 	depends = mesa
 	depends = pipewire
 	depends = libcap
-	source = moonlightweb-@MW_VERSION@.deb::https://github.com/linckosz/moonlight-web/releases/download/v@MW_VERSION@/moonlightweb-@MW_VERSION@-linux-x64.deb
+	source = moonlightweb-@MW_VERSION@.deb::https://github.com/RyanC92/moonlight-web/releases/download/v@MW_VERSION@/moonlightweb-@MW_VERSION@-linux-x64.deb
 	sha256sums = @MW_SHA256@
 
 pkgname = moonlightweb-bin

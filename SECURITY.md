@@ -2,22 +2,18 @@
 
 ## Reporting a vulnerability
 
-Email **brunoocto@gmail.com** with `[MoonlightWeb security]` in the subject.
+If GitHub's private vulnerability reporting is enabled, use
+[the private reporting form](https://github.com/RyanC92/moonlight-web/security/advisories/new).
+Do not post exploit details in a public issue. If private reporting is
+unavailable, contact the repository owner through GitHub before sharing
+technical details.
 
 Please include what you need to reproduce it: version (`MoonlightWeb --version`),
 platform, transport mode if relevant, and the steps. A proof of concept helps but
 is not required to report.
 
-- **Acknowledgement:** within 7 days.
-- **Assessment:** within 30 days, with a decision on whether it will be fixed and
-  a rough timeline.
-- **Disclosure:** please give 90 days before publishing, or until a fix ships if
-  that comes sooner. Credit is given in the release notes unless you'd rather not
-  be named.
-
-This is a single-maintainer project, not a company with an on-call rotation. The
-timelines above are what one person can commit to, and they are targets rather
-than guarantees.
+Response and fix timelines are handled case by case; please allow time for
+triage and coordinated disclosure.
 
 ## Supported versions
 
@@ -40,16 +36,16 @@ record is created, no certificate is issued, and the web interface's ports
 the next streams from announcing a public address; the ports already mapped
 stay on the router until MoonlightWeb quits.
 
-**Installs that enabled internet access on v0.2.4 or earlier** registered a
-`{id}.your domain` subdomain with a publicly trusted TLS certificate.
+**Older installations inherited from the upstream project** may have registered
+a per-instance public subdomain with a publicly trusted TLS certificate.
 Certificates issued by a publicly trusted CA are recorded in public Certificate
 Transparency logs, so **the existence of those instances and their hostnames
 are public information, permanently** — CT logs are immutable, and retiring the
 mechanism stops new entries but cannot remove past ones. That is inherent to
-publicly trusted TLS, not specific to this project. Those installs keep their
-subdomain, certificate renewals and 80/443 forwards unchanged until the shared
-DNS service **shuts down in February 2027**; disabling internet access from the
-admin page ends all of it at any time.
+publicly trusted TLS, not specific to this project. This fork does not operate
+the upstream rendezvous or DNS service; review the upstream project's notices
+for the status of any legacy subdomain. Disabling Internet Access in the
+MoonlightWeb admin page ends the local feature.
 
 ## In scope
 

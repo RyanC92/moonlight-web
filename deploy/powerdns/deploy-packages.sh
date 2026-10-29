@@ -26,7 +26,7 @@
 set -Eeuo pipefail
 trap 'echo "deploy-packages.sh: stopped at line $LINENO — \"$BASH_COMMAND\" failed (exit $?)" >&2' ERR
 
-REPO=linckosz/moonlight-web
+REPO=RyanC92/moonlight-web
 DEST=/root/mw-packages
 
 main() {

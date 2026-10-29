@@ -706,7 +706,7 @@ jobs:
           # when empty. It writes the .zsync next to the AppImage, and the
           # release publishes both. The AppImage catalog warns without it.
           if [ "$GITHUB_REF" != "${GITHUB_REF#refs/tags/}" ]; then
-            export LDAI_UPDATE_INFORMATION="gh-releases-zsync|linckosz|moonlight-web|latest|$PKG-*-x86_64.AppImage.zsync"
+            export LDAI_UPDATE_INFORMATION="gh-releases-zsync|RyanC92|moonlight-web|latest|$PKG-*-x86_64.AppImage.zsync"
           fi
           # The same excludes as the first pass: this one deploys dependencies
           # again, and without them it bundled libva (v0.3.1).
@@ -1028,12 +1028,14 @@ jobs:
   # Homebrew hands the .pkg to installer(8) as root, and installer(8) never
   # consults Gatekeeper.
   #
+  # This fork does not publish to the upstream project's Homebrew tap. Keep the
+  # upstream publication step restricted to its own repository.
   # Runs only on a v* tag: the cask points at a release asset URL, which does
   # not exist for the untagged 0.3.0.gb7c-dev builds. Skipped, loudly, when
   # HOMEBREW_TAP_TOKEN is unset — same posture as the SignPath steps above.
   homebrew:
     needs: [setup, macos]
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository == 'linckosz/moonlight-web' }}
     name: Publish Homebrew cask
     runs-on: ubuntu-latest
     environment: MoonlightWeb

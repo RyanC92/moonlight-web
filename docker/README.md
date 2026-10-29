@@ -1,17 +1,18 @@
 # MoonlightWeb in Docker
 
-Official images for Linux servers, NAS boxes and mini PCs, built from the
-[`Dockerfile`](../Dockerfile) at the repository root on **official Debian**
-(`debian:trixie`), published to the GitHub Container Registry for
-**`linux/amd64`** and **`linux/arm64`**.
+The standard image for Linux servers, NAS boxes and mini PCs is built from the
+repository-root [`Dockerfile`](../Dockerfile), using **Debian**
+(`debian:trixie`), and published to this fork's GitHub Container Registry
+package as `ghcr.io/ryanc92/moonlight-web` for **`linux/amd64`** and
+**`linux/arm64`** when a release is published.
 
-> **Hardened variant in this fork.** [`Dockerfile.hardened`](Dockerfile.hardened)
+> **Hardened variant.** [`Dockerfile.hardened`](Dockerfile.hardened)
 > and [`docker-compose.hardened.yml`](docker-compose.hardened.yml) run the app
 > non-root on **8080/8443**, with a read-only root filesystem, all capabilities
 > dropped, `no-new-privileges`, resource limits and a security event log. See
 > [`docs/DEPLOY.md`](../docs/DEPLOY.md) and
-> [`docs/HARDENING.md`](../docs/HARDENING.md). Everything below describes the
-> upstream image and continues to apply to it.
+> [`docs/HARDENING.md`](../docs/HARDENING.md). The instructions below describe
+> the standard image and do not apply to the hardened variant unless noted.
 
 ---
 
@@ -28,7 +29,7 @@ sudo docker run -d --name moonlightweb \
   --cap-drop ALL --cap-add NET_BIND_SERVICE \
   -v mw-data:/data \
   --restart unless-stopped \
-  ghcr.io/linckosz/moonlight-web:latest
+  ghcr.io/ryanc92/moonlight-web:latest
 ```
 
 `--network host` is what puts the container on your LAN — without it, it can
@@ -123,16 +124,19 @@ for platforms with no host networking — read the caveats in it first.
 | Tag | What it is |
 |---|---|
 | `latest` | The newest release. What you want. |
-| `0.4.1` | That exact release, forever. |
-| `0.4` | The newest `0.4.x` — minor updates, no major jump. |
+| `X.Y.Z` | That exact release, forever. |
+| `X.Y` | The newest patch release in that minor line. |
 | `sha-<commit>` | One commit, pinned forever. |
 
 **Every tag here is a release.** There is no `edge` and no nightly: an image is
 published only from a `v*` tag that already passed the quality and test gates,
 so `latest` can never hand you work in progress.
+The first push may create the GHCR package as private. The repository owner must
+set the package visibility to **Public** in GitHub Packages before anonymous
+pulls will work; the separate `-dev` package should remain private.
 
 Development builds exist, in a **separate and private** package —
-`ghcr.io/linckosz/moonlight-web-dev:dev`. It is produced only by running the
+`ghcr.io/ryanc92/moonlight-web-dev:dev`. It is produced only by running the
 Docker workflow by hand with `publish` ticked, and pulling it needs
 `docker login ghcr.io` with an account that has access: an anonymous request
 for its tag list is refused with 403, where the public package answers 200.
@@ -197,7 +201,7 @@ sudo docker network create -d macvlan \
 sudo docker run -d --name moonlightweb \
   --network mw-lan --ip 192.168.1.240 \
   -v mw-data:/data --restart unless-stopped \
-  ghcr.io/linckosz/moonlight-web:latest
+  ghcr.io/ryanc92/moonlight-web:latest
 ```
 
 One caveat worth knowing before you pick it: by design, a macvlan container and
@@ -223,7 +227,7 @@ outside the LAN.
 | **443** | TCP | **Always** | The web UI, the REST API, and the `wss://…/ws` upgrade that carries WebRTC signalling. The one port a browser cannot do without. |
 | **80** | TCP | Recommended | Redirect to HTTPS, so `http://server` reaches the app instead of failing. |
 | **48550–48573** | UDP | **Always** (host firewall) | WebRTC media, audio and input. Each stream slot binds `48550 + slot`, with or without UPnP, so a host firewall can let the block through; with UPnP the router forwards a port to it (the slot's own first). |
-| **47999** | UDP | Legacy Internet Access | Mapped alongside 80/443 only by an install that still holds a legacy `the upstream project` sub-domain. |
+| **47999** | UDP | Legacy Internet Access | Used only by older installations that still hold a legacy shared-service subdomain. |
 | *ephemeral* | UDP | Fallback | When the slot's port is already taken (a second instance on the same machine), the stream takes another free port of the block. Only when the whole block is taken does libdatachannel take whatever the kernel gives it, which a host firewall blocks. |
 
 > **In short:** on a LAN, **443/tcp**, **80/tcp** and **48550–48573/udp**.
@@ -246,36 +250,31 @@ Nothing to publish, but these paths have to exist. On the host network they do.
 | LAN multicast | 5353 | UDP | mDNS host discovery (host networking only). |
 | LAN multicast | 1900 | UDP | SSDP, to find the UPnP router (host networking only). |
 | Internet | 19302 | UDP | STUN, to learn the public address for a stream from outside the LAN. |
-| Internet | 443 | TCP | Update check, and the held line to the rendezvous server when Internet Access is on. |
+| Internet | 443 | TCP | GitHub release checks; optional update/rendezvous endpoints only when configured into a custom build. |
 
 ---
 
 ## Streaming from outside the LAN (Internet Access)
 
-Internet Access is an opt-in consent, off by default. While it is on, the app
-asks the router (UPnP, SSDP multicast — so **host networking**) to open a
-streaming port during each session; whoever connects reaches this machine
-directly, and each side of a peer-to-peer connection sees the other's public IP
-address. No DNS record is created, no certificate is issued, and ports 80/443
-stay closed:
+Internet Access is an opt-in feature, off by default. It asks the router
+(UPnP, SSDP multicast — so **host networking**) to open a UDP streaming port
+during a session. The connection is peer-to-peer, so each side can see the
+other's public IP address. This feature does **not** publish the web interface,
+create a public DNS record or issue a certificate:
 
 ```sh
 docker exec -it moonlightweb moonlightweb --enable-internet
 ```
 
-A new remote entry link — reaching the web UI itself from outside without
-opening it to the internet — is in development and will be announced in the
-release notes. Until then a remote browser has no way in unless you forward
-TCP 443 yourself and accept the self-signed warning, or bring your own domain
-and certificate.
+To reach the web interface remotely, run your own TLS edge and configure your
+own hostname. Follow [the self-hosting guide](../docs/SELF_HOSTING.md),
+[public deployment](../docs/PUBLIC.md) and [edge configuration](../docs/EDGE.md).
+Do not expose the app's private HTTP listener to the internet.
 
-**A container upgraded from v0.2.4 or earlier** stops using the
-`the upstream project` sub-domain it once registered: this version registers no
-name, renews no certificate and forwards no web port. The sub-domain keeps
-resolving — that is the DNS server's doing, not the container's — until the
-shared service shuts down in February 2027. Nothing has to be reconfigured;
-the consent checkbox is asked once more, because the wording it was ticked
-under described a mechanism that no longer runs.
+If you migrate `/data` from an older upstream install, it may contain settings
+for an upstream rendezvous or subdomain. This fork does not operate that
+service. Configure your own edge and domain instead; legacy DNS records and
+public certificate-transparency entries are outside this container's control.
 
 ---
 
@@ -309,7 +308,7 @@ docker run --rm -v mw-data:/data -v "$PWD:/backup" debian:trixie-slim \
 | `MW_HTTP_PORT` | `80` | HTTP listener (HTTP-to-HTTPS redirect). |
 | `MW_UPNP` | `1` | `0` stops the app asking the router to map ports — set it on a bridge network, where the request cannot reach a router anyway. |
 | `TZ` | `Etc/UTC` | Timestamps in the logs and the admin UI. |
-| `MW_DOMAIN`, `MW_PDNS_TOKEN` | baked in | The rendezvous domain and the shared API key for the update relay and aggregate metrics. The official images carry the project's, exactly like the `.deb`; without them the container never contacts our infrastructure. |
+| `MW_DOMAIN`, `MW_PDNS_TOKEN` | unset unless supplied at build time | Optional custom domain and API token for an operator-managed rendezvous/update relay and aggregate metrics. The default Docker build does not include them. |
 
 Everything else is configured from the admin page, or by editing
 `settings.json` in the volume and restarting — see
@@ -318,7 +317,7 @@ Everything else is configured from the admin page, or by editing
 Anything after the image name is passed straight to the binary:
 
 ```sh
-docker run … ghcr.io/linckosz/moonlight-web:latest --port 8080
+docker run … ghcr.io/ryanc92/moonlight-web:latest --port 8080
 ```
 
 ---
@@ -343,7 +342,7 @@ actually connect.
 the pairings across, so nothing is re-entered:
 
 ```sh
-sudo docker pull ghcr.io/linckosz/moonlight-web:latest
+sudo docker pull ghcr.io/ryanc92/moonlight-web:latest
 sudo docker stop moonlightweb && sudo docker rm moonlightweb
 sudo docker run -d --name moonlightweb … # the same command as step 1
 ```
@@ -432,7 +431,7 @@ docker run -d --name moonlightweb --network host \
   --user 1000:1000 --cap-drop ALL \
   -e MW_HTTP_PORT=8080 -e MW_HTTPS_PORT=8443 \
   -v /srv/moonlightweb:/data \
-  ghcr.io/linckosz/moonlight-web:latest
+  ghcr.io/ryanc92/moonlight-web:latest
 ```
 
 The URL becomes `https://<server-ip>:8443`.
@@ -442,7 +441,7 @@ The URL becomes `https://<server-ip>:8443`.
 ## Building it yourself
 
 ```sh
-git clone --recurse-submodules https://github.com/linckosz/moonlight-web
+git clone --recurse-submodules https://github.com/RyanC92/moonlight-web.git
 cd moonlight-web
 docker build -t moonlightweb --build-arg MW_VERSION=0.0.0-dev .
 ```

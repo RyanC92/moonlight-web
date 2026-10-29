@@ -50,7 +50,7 @@ install=moonlightweb-bin.install
 # broken plugin loading before.
 options=('!strip' '!debug')
 
-source=("moonlightweb-${pkgver}.deb::https://github.com/linckosz/moonlight-web/releases/download/v${pkgver}/moonlightweb-${pkgver}-linux-x64.deb")
+source=("moonlightweb-${pkgver}.deb::https://github.com/RyanC92/moonlight-web/releases/download/v${pkgver}/moonlightweb-${pkgver}-linux-x64.deb")
 sha256sums=('@MW_SHA256@')
 
 package() {

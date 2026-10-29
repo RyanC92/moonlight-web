@@ -11,8 +11,7 @@
 #      targets and then exercises what a bare build never touches (staging,
 #      windeployqt, the Inno Setup script, linuxdeploy, macdeployqt + signing).
 #   4. container image — docker.yml, also reused as a workflow, on a v* tag
-#      only. The `edge` tag comes off docker.yml's own push trigger; this call
-#      is what publishes a release image to GHCR behind the same gates.
+#      only. This publishes a release image to GHCR behind the same gates.
 #
 # Packaging never runs on a broken commit, so the (expensive) multi-platform
 # matrix is only spent on validated code.
@@ -127,7 +126,7 @@ jobs:
   # production must serve it before a package is built: a machine that installs
   # the release before the server knows it would be refused.
   interface-lists:
-    name: Official interface lists
+    name: Release interface integrity
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -144,9 +143,14 @@ jobs:
           else
             node scripts/interface-list.mjs check
           fi
-      - name: Production serves the release's list
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: node scripts/interface-list.mjs live "${GITHUB_REF_NAME#v}" https://stream.example.com
+      - name: Configured live server serves the release's list
+        if: startsWith(github.ref, 'refs/tags/v') && vars.BOOTSTRAP_LIVE_URL != ''
+        env:
+          LIVE_URL: ${{ vars.BOOTSTRAP_LIVE_URL }}
+        run: node scripts/interface-list.mjs live "${GITHUB_REF_NAME#v}" "$LIVE_URL"
+      - name: Skip live check when no server is configured
+        if: startsWith(github.ref, 'refs/tags/v') && vars.BOOTSTRAP_LIVE_URL == ''
+        run: echo "::notice::No BOOTSTRAP_LIVE_URL repository variable; skipping the optional live-server check."
 
   # ──────────────────── 1b. THE UPSCALER LABORATORY (software GPUs) ────────────────────
   # The two renderers run MoonlightWeb's own upscaler on SwiftShader — WebGPU's
@@ -354,9 +358,8 @@ jobs:
 
   # ──────────────────────── 4. CONTAINER IMAGE ────────────────────────
   # The release image for a v* tag, gated on the same green quality/tests as
-  # the installers. Tags only: `edge` (the tip of main) is published by
-  # docker.yml's own push trigger, and a manual CI run on a branch is about
-  # installers — an image from it would have no tag to answer to.
+  # the installers. A manual CI run on a branch builds installers only; a
+  # separately dispatched Docker workflow is available for image checks.
   #
   # Independent of `package`: a Debian container has nothing to do with the
   # Windows/macOS/Linux desktop bundles, and making it wait would only delay

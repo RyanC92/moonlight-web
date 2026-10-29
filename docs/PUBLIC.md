@@ -4,6 +4,10 @@ A single authenticated entry point on your own domain, streaming from hosts you
 have paired with — typically **ViBeShine** on the gaming PC. Nothing is installed
 beside the host; the bridge speaks the same protocol Moonlight does.
 
+MoonlightWeb serves its own browser interface and API; this deployment does
+not require a separate static web host. Caddy (or another edge described in
+[`docs/EDGE.md`](EDGE.md)) terminates HTTPS and forwards requests to the app.
+
 ```
         your browser                     the bridge                      the host
    ┌────────────────────┐        ┌──────────────────────────┐      ┌──────────────────┐

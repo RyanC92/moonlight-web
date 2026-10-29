@@ -48,7 +48,7 @@ the build script: `C:\Qt\6.11.0\msvc2022_64` (override with the `QTDIR` env var)
 ## 2. Clone & build
 
 ```bash
-git clone https://github.com/linckosz/moonlight-web.git
+git clone https://github.com/RyanC92/moonlight-web.git
 cd moonlight-web
 git submodule update --init --recursive   # moonlight-common-c, qmdnsengine, libdatachannel...
 

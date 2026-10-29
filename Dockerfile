@@ -8,13 +8,13 @@
 #  checked to contain none of them — the same exposure the .deb already has,
 #  which compiles the identical values into its binary.)
 # =============================================================================
-#  MoonlightWeb — official container image (Debian).
+#  MoonlightWeb container image (Debian).
 #
 #      docker build -t moonlightweb .
 #      docker run -d --network host -v mw-data:/data moonlightweb
 #
 #  Published by .github/workflows/docker.yml to
-#  ghcr.io/linckosz/moonlight-web for linux/amd64 and linux/arm64.
+#  ghcr.io/ryanc92/moonlight-web for linux/amd64 and linux/arm64.
 #
 #  Two stages, both on the same official Debian release:
 #

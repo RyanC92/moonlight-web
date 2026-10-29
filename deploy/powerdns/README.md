@@ -403,7 +403,7 @@ IP=$(grep ^MW_PUBLIC_IP= ~/moonlight-web/deploy/powerdns/.env | cut -d= -f2 | tr
 echo "domain=[$D] ip=[$IP]"
 
 # 1. the dev clone, with a .env that pins compose to the DEV project
-git clone https://github.com/linckosz/moonlight-web ~/moonlight-web-dev
+git clone https://github.com/RyanC92/moonlight-web.git ~/moonlight-web-dev
 cd ~/moonlight-web-dev/deploy/powerdns
 printf 'COMPOSE_FILE=docker-compose.dev.yml\nCOMPOSE_PROJECT_NAME=mw-dev\nMW_DOMAIN=%s\nMW_RDV_OWNER_SECRET=%s\n' \
   "$D" "$(openssl rand -hex 32)" > .env
