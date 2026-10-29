@@ -293,10 +293,9 @@ void run_api_csrf_tests()
     Caller stranger;
     stranger.peerLocal = false;
     stranger.adminKeyOk = true;
-    const Reply anon =
-        serve(wire("POST /api/auth/regenerate HTTP/1.1",
-                   {"Host: ab2407f0.example.com", "Sec-Fetch-Site: same-origin"}),
-              stranger);
+    const Reply anon = serve(wire("POST /api/auth/regenerate HTTP/1.1",
+                                  {"Host: ab2407f0.example.com", "Sec-Fetch-Site: same-origin"}),
+                             stranger);
     CHECK(!anon.localPrivilege);
     CHECK(!anon.adminPrivilege);
 }

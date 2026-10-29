@@ -43,7 +43,7 @@ static constexpr int kPeriodicCheckMs = 5 * 60 * 1000;
 static QString baseDomain()
 {
     QString env = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    return env;  // this fork is LAN-only by default; no upstream domain
+    return env; // this fork is LAN-only by default; no upstream domain
 }
 
 // ---------------------------------------------------------------------------

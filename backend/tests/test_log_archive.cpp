@@ -316,8 +316,7 @@ void run_log_scrubber_tests()
 
     // Links that open the instance; the project's own names stay.
     CHECK_EQ(
-        s.scrubLine(
-            R"~([RDV] line up — "https://stream.example.com/41zvnyqjdnybgwhw8f20martz4")~"),
+        s.scrubLine(R"~([RDV] line up — "https://stream.example.com/41zvnyqjdnybgwhw8f20martz4")~"),
         QString(R"~([RDV] line up — "https://stream.example.com/(link)")~"));
     CHECK_EQ(s.scrubLine("  From the internet: https://stream.dev.example.com/wwj7jmmpb"),
              QString("  From the internet: https://stream.dev.example.com/(link)"));

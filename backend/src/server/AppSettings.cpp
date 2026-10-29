@@ -1148,7 +1148,7 @@ QString AppSettings::domain() const
     // The name a pre-0.3 install would have registered under the retired DNS
     // mechanism. Computed only to be excluded below — nothing points at it.
     QString baseDomain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (baseDomain.isEmpty()) return {};  // this fork does not use the retired DNS mechanism
+    if (baseDomain.isEmpty()) return {}; // this fork does not use the retired DNS mechanism
 
     const QString uid = uniqueId();
     const QString retired = uid.isEmpty() ? baseDomain : (uid + QLatin1Char('.') + baseDomain);

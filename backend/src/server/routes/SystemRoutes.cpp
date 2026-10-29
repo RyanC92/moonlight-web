@@ -1338,9 +1338,8 @@ void registerSystemRoutes(HttpServer& server, AppSettings& appSettings, AuthMana
         // Only the host machine, or a session unlocked with the admin password,
         // can modify server-side streaming settings.
         if (!req.isLocal)
-            return HttpResponse::error(403,
-                                       "Streaming settings can only be changed by the host "
-                                       "machine or after unlocking with the admin password");
+            return HttpResponse::error(403, "Streaming settings can only be changed by the host "
+                                            "machine or after unlocking with the admin password");
 
         QJsonDocument doc = QJsonDocument::fromJson(req.body);
         QJsonObject body = doc.object();
