@@ -3,7 +3,7 @@
 Captured during the hardening/testing session, 2026-10-28. None of these are
 started; this file exists so the requests are not lost while testing continues.
 
-## 1. Point the empty-state download link at ViBeShine
+## 1. Point the empty-state download link at ViBeShine ✅ DONE
 
 The home page, with no paired host, offers a "download Sunshine" link. It should
 suggest **ViBeShine** instead.
@@ -27,7 +27,7 @@ titles, certificate CN, user-visible strings, package/container names, and the
   migration, not a string edit — existing `settings.json`, `cert/` and pairings
   live there.
 
-## 3. Self-host at a unique URL; remove all `moonlightweb.top` references
+## 3. Self-host at a unique URL; remove all moonlightweb.top references ✅ DONE (code)
 
 Every reference to the upstream author's hosted infrastructure must go, because
 this fork will run its own.
@@ -196,6 +196,5 @@ MttVDD already matches the client's resolution (`vddmatch`) at up to 240 Hz.
 displays / per-client isolated displays become a requirement. At that point the
 right starting point is `libvirtualdisplay`'s own `docs/` and probe tool, not
 ViBeShine's integration layer.
-
 
 
