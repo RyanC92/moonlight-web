@@ -107,7 +107,7 @@
         "empty": "Aucun hôte trouvé",
         "emptyHint": "Les hôtes de ce réseau apparaissent tout seuls. Vous pouvez aussi en ajouter un manuellement.",
         "emptyNeedsHost": "Streamer un ordinateur demande un logiciel hôte sur cet ordinateur. MoonlightWeb fonctionne avec Sunshine — un logiciel à part, que vous téléchargez et installez vous-même.",
-        "emptyGetSunshine": "Télécharger Sunshine",
+        "emptyGetViBeShine": "Télécharger ViBeShine",
         "connectionLost": "Connexion perdue",
         "statusOffline": "Hors ligne",
         "statusUnavailable": "Indisponible",

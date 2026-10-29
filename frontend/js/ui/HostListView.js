@@ -56,10 +56,10 @@ import { hostUpdate, canSelfUpdate } from './HostUpdate.js';
  *
  * The project's releases page rather than a file: every platform's build is
  * behind it, the maintainers keep it current, and what the user gets is what
- * LizardByte published — no mirror of ours to go stale, and no download this
+ * Nonary published — no mirror of ours to go stale, and no download this
  * app started on its own.
  */
-const SUNSHINE_DOWNLOAD_URL = 'https://github.com/LizardByte/Sunshine/releases/latest';
+const VIBESHINE_DOWNLOAD_URL = 'https://github.com/Nonary/vibeshine/releases/latest';
 
 /**
  * The order a host card shows its apps in: "MoonlightWeb Virtual Display"
@@ -873,8 +873,8 @@ export class HostListView {
                         this._hostsLoaded
                             ? `<div class="hosts-empty-cta">
                     <p class="hint">${t('hosts.emptyNeedsHost')}</p>
-                    <a class="btn btn-secondary" href="${SUNSHINE_DOWNLOAD_URL}"
-                       target="_blank" rel="noopener noreferrer">${t('hosts.emptyGetSunshine')}</a>
+                    <a class="btn btn-secondary" href="${VIBESHINE_DOWNLOAD_URL}"
+                       target="_blank" rel="noopener noreferrer">${t('hosts.emptyGetViBeShine')}</a>
                 </div>`
                             : ''
                     }
