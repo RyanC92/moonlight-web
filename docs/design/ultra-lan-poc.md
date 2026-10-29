@@ -399,7 +399,7 @@ tournent sans console : seule la ligne « Mesurée » de U0.2 donne l'âge.
   (`https://192.168.1.66:8443/`). Safari n'étend pas au WebSocket de
   signalisation l'exception de certificat acceptée pour la page, et le journal
   de l'hôte dit « certificate unknown » toutes les 4 s. Son lien de staging
-  (`stream.dev.moonlightweb.top/<id>`, vrai certificat, vidéo restée en direct
+  (`stream.dev.example.com/<id>`, vrai certificat, vidéo restée en direct
   sur le LAN) marche.
 
 **Le Mac M1 en Wi-Fi** (même nuit, 22:49-23:19, Chrome de banc, capot fermé).

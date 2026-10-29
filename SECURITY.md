@@ -41,7 +41,7 @@ the next streams from announcing a public address; the ports already mapped
 stay on the router until MoonlightWeb quits.
 
 **Installs that enabled internet access on v0.2.4 or earlier** registered a
-`{id}.moonlightweb.top` subdomain with a publicly trusted TLS certificate.
+`{id}.your domain` subdomain with a publicly trusted TLS certificate.
 Certificates issued by a publicly trusted CA are recorded in public Certificate
 Transparency logs, so **the existence of those instances and their hostnames
 are public information, permanently** — CT logs are immutable, and retiring the

@@ -9,7 +9,7 @@ Install it on the gaming PC — it captures and encodes that machine **itself**,
 Nothing to install on the client either: just a URL, from your LAN or from anywhere.\
 Under **20 ms** glass‑to‑glass over Wi‑Fi on a LAN, ~**25 ms** over the Internet.
 
-**🌐 Website: [moonlightweb.top](https://moonlightweb.top/)** — screenshots, [install guides](https://moonlightweb.top/guides/windows.html) & [FAQ](https://moonlightweb.top/faq.html)\
+**Self-hosted fork** - deploy behind your own domain. See [docs/PUBLIC.md](docs/PUBLIC.md) and [docs/EDGE.md](docs/EDGE.md).
 **💬 Community: [Discord](https://discord.gg/wfbesPx4UB)** — questions, help and new‑release announcements
 
 [![Discord](https://img.shields.io/badge/Discord-join%20the%20chat-5865F2?logo=discord&logoColor=white)](https://discord.gg/wfbesPx4UB)
@@ -27,7 +27,7 @@ Under **20 ms** glass‑to‑glass over Wi‑Fi on a LAN, ~**25 ms** over the In
 
 Moonlight‑Web turns your gaming PC into a stream, and **any device with a modern browser** (PC, Mac, tablet, phone, TV) into the client. Only the server gets installed.
 
-*Moonlight‑Web ([moonlightweb.top](https://moonlightweb.top/)) and [moonlight-web-stream](https://github.com/MrCreativ3001/moonlight-web-stream) are two separate projects with close names: moonlight-web-stream is a web client for a Sunshine host; Moonlight‑Web streams the PC it is installed on by itself, and pairs with Sunshine too.*
+*Moonlight‑Web ([your domain](https://your domain/)) and [moonlight-web-stream](https://github.com/MrCreativ3001/moonlight-web-stream) are two separate projects with close names: moonlight-web-stream is a web client for a Sunshine host; Moonlight‑Web streams the PC it is installed on by itself, and pairs with Sunshine too.*
 
 - 🖥️ **Its own capture & encode engine** — the machine it runs on is a host straight away: no Sunshine, no pairing, no PIN. One card per display. Windows, Linux and macOS.
 - 🎮 **Low‑latency streaming** up to 4K HDR, 240 FPS, **H.264 / HEVC / AV1**, on **NVENC · AMF · Quick Sync · VA‑API · VideoToolbox** (software fallback).
@@ -35,7 +35,7 @@ Moonlight‑Web turns your gaming PC into a stream, and **any device with a mode
 - 🔊 **Opus audio**, adaptive jitter buffer, stereo.
 - ⌨️🖱️🎮 **Full input**: keyboard, mouse (pointer‑lock), touch trackpad, **Xbox/PS gamepads** with rumble. On Windows it reaches the lock screen and UAC prompts too, and **Ctrl+Alt+Del** works from the touch keyboard bar (Ctrl, Alt, then Del). A Windows PC with no mouse plugged in shows its pointer in the stream too. **Racing wheels, flight sticks and RC radios** too, as an Xbox pad or sent to the game as themselves, force feedback included ([see below](#controllers)).
 - 🤝 **Pairs with other hosts too** — Sunshine/Apollo, Wolf, MultiSeat: [see below](#other-hosts-it-can-pair-with). mDNS discovery, PIN pairing, multi‑host.
-- 🌍 **Internet access** opt‑in, at a `stream.moonlightweb.top/「id」` address, with nothing published in your name.
+- 🌍 **Internet access** opt‑in, at a `your own domain/「id」` address, with nothing published in your name.
 - 🪄 **Video Enhancement** (bonus): GPU upscaling & sharpening in the browser.
 - 👥 **Session sharing**: invite up to 3 people as viewer, gamepad player or full control.
 
@@ -194,7 +194,7 @@ Each player row gives **a link and a 6‑digit PIN**. Send them separately: the 
 
 ## Install
 
-Grab the installer from the **[latest release](https://github.com/linckosz/moonlight-web/releases/latest)** or **[moonlightweb.top](https://moonlightweb.top/#download)**, which picks the right file. Guides with screenshots: [Windows](https://moonlightweb.top/guides/windows.html) · [macOS](https://moonlightweb.top/guides/macos.html) · [Linux](https://moonlightweb.top/guides/linux.html).
+Grab the installer from the **[latest release](https://github.com/linckosz/moonlight-web/releases/latest)** or **[GitHub Releases](https://github.com/linckosz/moonlight-web/releases/latest)**, which picks the right file. Guides with screenshots: [Windows](docs/DEPLOY.md) · [macOS](docs/DEPLOY.md) · [Linux](docs/DEPLOY.md).
 
 > ✅ **Nothing else to install.** Install it **on the gaming PC** — that is the whole setup.
 
@@ -224,7 +224,7 @@ The `.pkg` is not notarized, so a downloaded copy is blocked by Gatekeeper. Eith
 
 ```sh
 brew install --cask linckosz/tap/moonlightweb
-curl -fsSL https://moonlightweb.top/install.sh | bash
+curl -fsSL https://github.com/linckosz/moonlight-web/releases/latest | bash
 ```
 
 For a downloaded file on macOS 15+: *System Settings → Privacy & Security → **Open Anyway***, or `xattr -dr com.apple.quarantine ~/Downloads/moonlightweb-*.pkg`.
@@ -237,10 +237,10 @@ For a downloaded file on macOS 15+: *System Settings → Privacy & Security → 
 **One command, updates included:**
 
 ```sh
-curl -fsSL https://moonlightweb.top/install.sh | bash
+curl -fsSL https://github.com/linckosz/moonlight-web/releases/latest | bash
 ```
 
-It adds the signed **APT** or **DNF** repository, so MoonlightWeb updates with the system and appears in GNOME Software, KDE Discover and App Center. Arch uses [`moonlightweb-bin`](https://aur.archlinux.org/packages/moonlightweb-bin) from the AUR. Manual setup: [Linux guide](https://moonlightweb.top/guides/linux.html#one-line-install).
+It adds the signed **APT** or **DNF** repository, so MoonlightWeb updates with the system and appears in GNOME Software, KDE Discover and App Center. Arch uses [`moonlightweb-bin`](https://aur.archlinux.org/packages/moonlightweb-bin) from the AUR. Manual setup: [Linux guide](docs/DEPLOY.md#one-line-install).
 
 Or install a package directly. All are **self‑contained** (Qt + OpenSSL bundled), install to `/opt/moonlightweb`, open the firewall ports (80/tcp, 443/tcp, 48550‑48573/udp) and start the app.
 
@@ -351,16 +351,16 @@ It controls: admin **PIN**, active **sessions**, HTTP/HTTPS **ports**, **transpo
 
 **Internet Access is opt‑in, off by default.** While it is on, the server:
 
-1. **Detects your public IP** over STUN (ours first, `stream.moonlightweb.top:3478`, then Google/Cloudflare) and reports CGNAT or double NAT. A LAN stream uses no STUN at all.
+1. **Detects your public IP** over STUN (ours first, `your own domain:3478`, then Google/Cloudflare) and reports CGNAT or double NAT. A LAN stream uses no STUN at all.
 2. **Opens ports on the router via UPnP**: one per stream slot, kept from one stream to the next (an invited player's closes when they leave), and up to four for the entry link's tunnel. The two peers see each other's public IP.
 
 Nothing is published: **no DNS record, no certificate, ports 80/443 stay closed**. Turning it off closes the entry link at once, and the next streams announce no public address; the router ports already opened stay mapped until MoonlightWeb quits.
 
-**Remote access.** Your PC keeps one outgoing connection to an introduction server and is reached at `https://stream.moonlightweb.top/「id」` (shown on the admin page and in the tray). Visitors still need the access PIN.
+**Remote access.** Your PC keeps one outgoing connection to an introduction server and is reached at `https://your own domain/「id」` (shown on the admin page and in the tray). Visitors still need the access PIN.
 
-The browser loads a few kilobytes of entry page, opens WebRTC straight to your machine, checks its identity key, then loads the interface and API over that connection. Video never touches the server. The entry page is [published byte for byte](https://app.moonlightweb.top) and [checked on a schedule](.github/workflows/bootstrap-watch.yml).
+The browser loads a few kilobytes of entry page, opens WebRTC straight to your machine, checks its identity key, then loads the interface and API over that connection. Video never touches the server. The entry page is [published byte for byte](your own domain) and [checked on a schedule](.github/workflows/bootstrap-watch.yml).
 
-**Installs from v0.2.4 or earlier** keep their `「id」.moonlightweb.top` sub‑domain and forwards **until February 2027**, as the admin page notes.
+**Installs from v0.2.4 or earlier** keep their `「id」.your domain` sub‑domain and forwards **until February 2027**, as the admin page notes.
 
 <div align="center">
 
@@ -377,7 +377,7 @@ The browser loads a few kilobytes of entry page, opens WebRTC straight to your m
 ```
       BROWSER (any device, anywhere)                RENDEZVOUS SERVER
  ┌────────────────────────────────────┐        ┌────────────────────────────┐
- │  Entry page (a few KB)             │ https  │  stream.moonlightweb.top   │
+ │  Entry page (a few KB)             │ https  │  your own domain   │
  │  Web App (Vanilla JS)              │◄──────►│  · serves the entry page   │
  │  Video : WebCodecs + WebGPU        │  SDP   │  · passes SDP / ICE along  │
  │  Audio : Opus / WebRTC track       │  ICE   │  · never sees your video   │

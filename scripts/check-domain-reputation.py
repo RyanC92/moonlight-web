@@ -349,7 +349,7 @@ def check_mail_records(domain):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    ap.add_argument("--domain", default="moonlightweb.top")
+    ap.add_argument("--domain", default="example.com")
     ap.add_argument("--no-feeds", action="store_true", help="skip the downloaded feeds")
     args = ap.parse_args()
     domain = args.domain.lower().rstrip(".")

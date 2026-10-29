@@ -14,7 +14,7 @@ suggest **ViBeShine** instead.
 - Scope: wording **and** target URL. Renaming the label without changing the
   href would be worse than leaving it.
 
-## 2. Rebrand ✅ DONE (name stays MoonlightWeb; connection to moonlightweb.top removed)
+## 2. Rebrand ✅ DONE (name stays MoonlightWeb; connection to the upstream project removed)
 
 Replace the MoonlightWeb identity throughout: product name, logo, window/tray
 titles, certificate CN, user-visible strings, package/container names, and the
@@ -27,20 +27,20 @@ titles, certificate CN, user-visible strings, package/container names, and the
   migration, not a string edit — existing `settings.json`, `cert/` and pairings
   live there.
 
-## 3. Self-host at a unique URL; remove all moonlightweb.top references ✅ DONE
+## 3. Self-host at a unique URL; remove all the upstream project references ✅ DONE
 
 Every reference to the upstream author's hosted infrastructure must go, because
 this fork will run its own.
 
 Known or likely categories:
 
-- **Rendezvous / entry link** — `stream.moonlightweb.top`, the introduction
+- **Rendezvous / entry link** — `stream.the upstream project`, the introduction
   server used for Internet Access.
 - **Update relay** — `updates.{MW_DOMAIN}` in `README.md` and the update check.
 - **Session metrics** — `metrics.{MW_DOMAIN}`.
-- **Bootstrap watch / entry page** — `app.moonlightweb.top`, plus the
+- **Bootstrap watch / entry page** — `app.the upstream project`, plus the
   `.github/workflows/bootstrap-watch.yml` job that verifies it.
-- **Docs and installer links** — `moonlightweb.top` guides, `install.sh`, and
+- **Docs and installer links** — `the upstream project` guides, `install.sh`, and
   the package repositories.
 - **Container images** — `ghcr.io/linckosz/moonlight-web`.
 
@@ -196,4 +196,3 @@ MttVDD already matches the client's resolution (`vddmatch`) at up to 240 Hz.
 displays / per-client isolated displays become a requirement. At that point the
 right starting point is `libvirtualdisplay`'s own `docs/` and probe tool, not
 ViBeShine's integration layer.
-

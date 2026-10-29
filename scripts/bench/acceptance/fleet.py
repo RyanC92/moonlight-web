@@ -870,7 +870,7 @@ def rendezvous_url(probe_result):
         if rdv.get(key):
             return rdv[key]
     ident = rdv.get("id") or rdv.get("instance_id") or rdv.get("instanceId")
-    host = rdv.get("host") or rdv.get("server") or "stream.dev.moonlightweb.top"
+    host = rdv.get("host") or rdv.get("server") or "stream.dev.example.com"
     if ident:
         host = host.replace("https://", "").replace("http://", "").rstrip("/")
         return "https://%s/%s" % (host, ident)

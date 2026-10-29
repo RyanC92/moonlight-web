@@ -20,7 +20,7 @@ These are not preferences. If a step would break one, stop and tell the user.
    `https://<LAN-IP>:<port>` with its own self-signed certificate. No domain, no DNS record, no
    certificate request, no Internet URL.
 2. **No contact with the project's infrastructure** — the rendezvous server
-   (`stream.moonlightweb.top`, its staging `stream.dev.moonlightweb.top`), the DNS stack (PowerDNS,
+   (`stream.your domain`, its staging `stream.dev.your domain`), the DNS stack (PowerDNS,
    `deploy/powerdns/`), the `updates.` and `metrics.` endpoints. The code enforces it with
    `MW_LAN_ONLY=1` (below). Never unset it or set it to `0`; never set `MW_DOMAIN`,
    `MW_RENDEZVOUS_URL` or `MW_PDNS_TOKEN`; never run anything under `deploy/` or `bootstrap/`; do

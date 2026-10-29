@@ -1124,7 +1124,7 @@ jobs:
   # it for bootstrap-watch.yml's reference copy — this job's Pages deployment
   # raced it after every tag push and usually won, since building three
   # package formats takes longer than publishing a few KB of bootstrap. See
-  # the 2026-09-14 incident: app.moonlightweb.top served the package-repo
+  # the 2026-09-14 incident: app.example.com served the package-repo
   # homepage instead of the entry page for hours before anyone noticed.
   #
   # Instead the tree leaves as a build artifact and a release asset — same

@@ -1152,7 +1152,7 @@ vidéos dans le scratchpad de la session (`photon/`) ; rien du produit n'a chang
   échelle active) ; il reste le présentateur simple, égal à
   960×540 et meilleur en WebGPU à 1080p (×1,8 images) ; forcé, `mwsr` coûte une image de plus que
   `gl-mwsr`. La décision par classe reste à Bruno (plan §9, P6). Incident : `stream.dev` et
-  `stream.moonlightweb.top` injoignables de 11:39 à 11:44 (ligne rendez-vous de la `--dev` perdue puis
+  `stream.example.com` injoignables de 11:39 à 11:44 (ligne rendez-vous de la `--dev` perdue puis
   reprise), signalé à 59.
 
 ## 2026-10-22 — J29, le troisième repli de l'import, l'abandon du renderer, la CI rejouée sous Linux

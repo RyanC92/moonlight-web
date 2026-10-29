@@ -170,7 +170,7 @@ Lecture :
 
 **D'où vient la page** [C] : en LAN direct, `https://<IP du LAN>[:port]` ou
 `https://localhost` (certificat autosigné) ; par le rendez-vous (le défaut, LAN
-compris), `https://stream.moonlightweb.top/<id>`, une origine publique servie
+compris), `https://stream.example.com/<id>`, une origine publique servie
 par un service worker [C, `bootstrap/sw.js`, `bootstrap/v1/boot.js:615`].
 
 | Canal | Chrome / Edge | Firefox | Safari |
@@ -185,7 +185,7 @@ par un service worker [C, `bootstrap/sw.js`, `bootstrap/v1/boot.js:615`].
 Conséquences :
 - **Une page publique ne joint plus le loopback sans autorisation.** La
   demande est par origine et mémorisée. Pour le rendez-vous, c'est une
-  origine (`stream.moonlightweb.top`), donc une demande une fois. En LAN direct,
+  origine (`stream.example.com`), donc une demande une fois. En LAN direct,
   une par IP d'hôte.
 - Dans le rendez-vous, la page tourne sous un service worker. La demande
   doit partir **de la page** : une requête d'un worker n'obtient pas
@@ -481,7 +481,7 @@ que si B3 montre que le transport, et non la présentation, domine.
    (HMAC du défi du Booster). Un site tiers ne peut pas lancer le Booster
    sans geste ni sans confirmation du navigateur, et ne connaît pas le jeton.
 4. **Contrôle d'origine** : en-tête `Origin` comparé à une liste
-   (`https://stream.moonlightweb.top`, `stream.dev…`, les origines LAN que
+   (`https://stream.example.com`, `stream.dev…`, les origines LAN que
    l'utilisateur a validées). Refus de `Host` autre que `127.0.0.1:<port>`
    (contre le DNS rebinding).
 5. **Protocole minimal et fermé** : « configure », « image codée »,

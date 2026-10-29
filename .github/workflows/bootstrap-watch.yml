@@ -58,8 +58,8 @@ jobs:
   compare:
     runs-on: ubuntu-latest
     env:
-      LIVE: https://stream.moonlightweb.top
-      REFERENCE: https://app.moonlightweb.top
+      LIVE: https://stream.example.com
+      REFERENCE: https://app.example.com
     steps:
       - uses: actions/checkout@v4
         with:

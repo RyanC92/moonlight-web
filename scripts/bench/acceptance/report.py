@@ -556,7 +556,7 @@ def main():
 
     meta = {"generatedAt": time.strftime("%Y-%m-%d %H:%M"), "version": ns.version,
             "commit": ns.commit, "run": ns.run,
-            "rendezvous": "stream.dev.moonlightweb.top"}
+            "rendezvous": "stream.dev.example.com"}
     path = render(chapter1, passes, ns.out, meta)
     print("html: " + path)
     if not ns.no_pdf:

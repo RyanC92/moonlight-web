@@ -3573,7 +3573,7 @@ entitlement Apple), `probeVirtualGamepad` répond `supported = false`.
 
 ### 20.6 Le premier flux (05/09/2026)
 
-Chrome 152 sur bench-desk → rendez-vous (`stream.moonlightweb.top/<id>`, ICE en LAN
+Chrome 152 sur bench-desk → rendez-vous (`stream.example.com/<id>`, ICE en LAN
 sur le port media du banc) → l'app complète construite sur le Mac (Qt 6.10.3, OpenSSL
 statique, signée avec l'identité de banc). Session `Built-in Retina Display
 2560x1440@60 HEVC via VideoToolbox on Apple M1 Pro`, VBV 666 kbit, décodeur
