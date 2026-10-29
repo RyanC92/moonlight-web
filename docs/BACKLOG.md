@@ -14,7 +14,7 @@ suggest **ViBeShine** instead.
 - Scope: wording **and** target URL. Renaming the label without changing the
   href would be worse than leaving it.
 
-## 2. Rebrand ✅ DONE (name stays MoonlightWeb; connection to the upstream project removed)
+## 2. Rebrand ✅ DONE (name stays MoonlightWeb; connection to moonlightweb.top removed)
 
 Replace the MoonlightWeb identity throughout: product name, logo, window/tray
 titles, certificate CN, user-visible strings, package/container names, and the
@@ -27,7 +27,7 @@ titles, certificate CN, user-visible strings, package/container names, and the
   migration, not a string edit — existing `settings.json`, `cert/` and pairings
   live there.
 
-## 3. Self-host at a unique URL; remove all the upstream project references ✅ DONE
+## 3. Self-host at a unique URL; remove all moonlightweb.top references ✅ DONE
 
 Every reference to the upstream author's hosted infrastructure must go, because
 this fork will run its own.
