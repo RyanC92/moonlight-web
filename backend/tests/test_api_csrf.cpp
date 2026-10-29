@@ -37,7 +37,7 @@ struct Caller
     bool hostSession = false;
     bool adminSession = false;
     bool adminKeyOk = false;
-    QString publicDomain = QStringLiteral("ab2407f0.moonlightweb.top");
+    QString publicDomain = QStringLiteral("ab2407f0.example.com");
 };
 
 /// Assemble a request the way it goes on the wire, CRLF and all.
@@ -248,7 +248,7 @@ void run_api_csrf_tests()
     // Our own domain does NOT confer it, even from loopback: a TLS-terminating
     // tunnel runs on this machine and forwards the whole internet from there,
     // under exactly that name.
-    CHECK(!serve(wire("GET /api/auth/status HTTP/1.1", {"Host: ab2407f0.moonlightweb.top"}))
+    CHECK(!serve(wire("GET /api/auth/status HTTP/1.1", {"Host: ab2407f0.example.com"}))
                .localPrivilege);
     // Someone else's tunnel is someone else's name.
     CHECK(!serve(wire("GET /api/auth/status HTTP/1.1", {"Host: xyz.trycloudflare.com"}))
@@ -280,12 +280,12 @@ void run_api_csrf_tests()
     remoteAdmin.peerLocal = false;
     remoteAdmin.adminSession = true;
     CHECK(!serve(wire("POST /api/auth/regenerate HTTP/1.1",
-                      {"Host: ab2407f0.moonlightweb.top", "Sec-Fetch-Site: same-origin"}),
+                      {"Host: ab2407f0.example.com", "Sec-Fetch-Site: same-origin"}),
                  remoteAdmin)
                .adminPrivilege);
     remoteAdmin.adminKeyOk = true;
     CHECK(serve(wire("POST /api/auth/regenerate HTTP/1.1",
-                     {"Host: ab2407f0.moonlightweb.top", "Sec-Fetch-Site: same-origin"}),
+                     {"Host: ab2407f0.example.com", "Sec-Fetch-Site: same-origin"}),
                 remoteAdmin)
               .adminPrivilege);
 
@@ -295,7 +295,7 @@ void run_api_csrf_tests()
     stranger.adminKeyOk = true;
     const Reply anon =
         serve(wire("POST /api/auth/regenerate HTTP/1.1",
-                   {"Host: ab2407f0.moonlightweb.top", "Sec-Fetch-Site: same-origin"}),
+                   {"Host: ab2407f0.example.com", "Sec-Fetch-Site: same-origin"}),
               stranger);
     CHECK(!anon.localPrivilege);
     CHECK(!anon.adminPrivilege);

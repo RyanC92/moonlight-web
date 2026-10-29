@@ -41,7 +41,7 @@ function register(entries) {
 }
 
 function entry(id, name) {
-    return { id, name, url: `https://stream.moonlightweb.top/${id}`, seen: Date.now() };
+    return { id, name, url: `https://stream.example.com/${id}`, seen: Date.now() };
 }
 
 const menu = () => document.getElementById('instance-menu');
@@ -122,7 +122,7 @@ describe('LoginView server selection', () => {
         delete window.location;
         window.location = {
             get href() {
-                return 'https://stream.moonlightweb.top/';
+                return 'https://stream.example.com/';
             },
             set href(v) {
                 assign.push(v);
@@ -134,7 +134,7 @@ describe('LoginView server selection', () => {
         expect(assign).toEqual([]);
 
         items[1].click();
-        expect(assign).toEqual([`https://stream.moonlightweb.top/${THERE}`]);
+        expect(assign).toEqual([`https://stream.example.com/${THERE}`]);
 
         if (original) Object.defineProperty(window, 'location', original);
     });

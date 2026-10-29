@@ -9,7 +9,7 @@
  */
 
 // Not localhost, where every browser has the admin page.
-// @vitest-environment-options {"url": "https://stream.moonlightweb.top/"}
+// @vitest-environment-options {"url": "https://stream.example.com/"}
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MoonlightApp } from '../js/app.js';

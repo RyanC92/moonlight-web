@@ -57,7 +57,7 @@ services:
       # settings.json as `domain` on every start — that key is what
       # RequestGuard::isTrustedHost actually compares against (a variable alone
       # is not enough: AppSettings::domain() returns empty without it). It also
-      # replaces the upstream default of moonlightweb.top, which this fork does
+      # replaces the upstream default domain, which this fork does not contact.
       # not contact.
       #
       # Every edge below MUST present this same name in Host, or the app will

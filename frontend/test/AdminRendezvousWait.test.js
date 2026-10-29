@@ -48,7 +48,7 @@ describe('AdminView — waiting for the rendezvous address', () => {
         BackendClient.getInternetStatus
             .mockResolvedValueOnce(statusWith(''))
             .mockResolvedValueOnce(statusWith(''))
-            .mockResolvedValue(statusWith('https://stream.moonlightweb.top/abc'));
+            .mockResolvedValue(statusWith('https://stream.example.com/abc'));
 
         view._awaitRendezvousUrl();
         expect(view._awaitingRdv).toBe(true);
@@ -59,7 +59,7 @@ describe('AdminView — waiting for the rendezvous address', () => {
         expect(view._rendezvousUrl).toBe('');
 
         await vi.advanceTimersByTimeAsync(700);
-        expect(view._rendezvousUrl).toBe('https://stream.moonlightweb.top/abc');
+        expect(view._rendezvousUrl).toBe('https://stream.example.com/abc');
         expect(view._awaitingRdv).toBe(false);
         expect(renders).toBe(1);
 
@@ -84,7 +84,7 @@ describe('AdminView — waiting for the rendezvous address', () => {
     });
 
     it('does not start a wait when the address is already known', () => {
-        view._rendezvousUrl = 'https://stream.moonlightweb.top/already';
+        view._rendezvousUrl = 'https://stream.example.com/already';
         view._awaitRendezvousUrl();
         expect(view._awaitingRdv).toBe(false);
         expect(BackendClient.getInternetStatus).not.toHaveBeenCalled();
@@ -93,13 +93,13 @@ describe('AdminView — waiting for the rendezvous address', () => {
     it('survives a status call that fails and keeps waiting', async () => {
         BackendClient.getInternetStatus
             .mockRejectedValueOnce(new Error('backend busy'))
-            .mockResolvedValue(statusWith('https://stream.moonlightweb.top/xyz'));
+            .mockResolvedValue(statusWith('https://stream.example.com/xyz'));
 
         view._awaitRendezvousUrl();
         await vi.advanceTimersByTimeAsync(700);
         expect(view._awaitingRdv).toBe(true);
         await vi.advanceTimersByTimeAsync(700);
-        expect(view._rendezvousUrl).toBe('https://stream.moonlightweb.top/xyz');
+        expect(view._rendezvousUrl).toBe('https://stream.example.com/xyz');
     });
 
     // The wiring, not just the helper: enabling is where the empty box came from.
@@ -111,22 +111,22 @@ describe('AdminView — waiting for the rendezvous address', () => {
 
         expect(view._awaitingRdv).toBe(true);
         BackendClient.getInternetStatus.mockResolvedValue(
-            statusWith('https://stream.moonlightweb.top/late'),
+            statusWith('https://stream.example.com/late'),
         );
         await vi.advanceTimersByTimeAsync(700);
-        expect(view._rendezvousUrl).toBe('https://stream.moonlightweb.top/late');
+        expect(view._rendezvousUrl).toBe('https://stream.example.com/late');
         expect(view._awaitingRdv).toBe(false);
     });
 
     it('does not wait when enabling already answered with the address', async () => {
         BackendClient.enableInternet.mockResolvedValue({ status: 'enabled', domain: '' });
         BackendClient.getInternetStatus.mockResolvedValue(
-            statusWith('https://stream.moonlightweb.top/known'),
+            statusWith('https://stream.example.com/known'),
         );
 
         await view._enableInternet();
 
-        expect(view._rendezvousUrl).toBe('https://stream.moonlightweb.top/known');
+        expect(view._rendezvousUrl).toBe('https://stream.example.com/known');
         expect(view._awaitingRdv).toBe(false);
         expect(view._rdvPollTimer).toBe(null);
     });

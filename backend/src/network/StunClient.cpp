@@ -67,16 +67,17 @@ QList<StunClient::StunServer> StunClient::defaultServers()
     // fallback because a machine that cannot learn its own address cannot be
     // reached at all, and that is a worse answer than a widely-used third party.
     QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
-
+    // This fork is LAN-only by default and does not contact any upstream
+    // STUN server. Use widely-available public STUN servers.
+    Q_UNUSED(domain);
     return {
-        {QStringLiteral("stream.") + domain, 3478},
         {QStringLiteral("stun.l.google.com"), 19302},
         {QStringLiteral("stun1.l.google.com"), 19302},
         {QStringLiteral("stun.cloudflare.com"), 3478},
         {QStringLiteral("stun.nextcloud.com"), 443},
         {QStringLiteral("relay.metered.ca"), 80},
     };
+    }
 }
 
 // ---------------------------------------------------------------------------

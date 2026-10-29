@@ -34,7 +34,7 @@ package manager metadata or source tree reaches the final image.
 | Argument | Effect |
 |---|---|
 | `MW_VERSION` | Version string baked into the binary (`--version`, update check, User-Agent). Empty derives from a git tag; the build context excludes `.git`, so a local build reports `0.0.0-dev`. |
-| `MW_DOMAIN` | Domain used for rendezvous, STUN and updates. Empty means the binary falls back to `moonlightweb.top` **at runtime**; `MW_LAN_ONLY=1` is what keeps it off those paths. |
+| `MW_DOMAIN` | Domain used for rendezvous, STUN and updates. Empty means no upstream domain is used; this fork is LAN-only by default and does not contact any upstream infrastructure. |
 | `MW_PDNS_TOKEN` | Shared API key for the update relay and session metrics, and how an official build is distinguished. Empty = self-built; those calls are skipped. |
 | `DEBIAN_RELEASE` | Defaults to `trixie`. |
 

@@ -55,5 +55,5 @@ export function ourStunHost() {
     } catch (_e) {
         /* no location (worker, test harness) — fall through to the default */
     }
-    return 'stream.moonlightweb.top';
+    return '';  // this fork is LAN-only by default
 }

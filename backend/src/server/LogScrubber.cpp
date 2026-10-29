@@ -108,7 +108,7 @@ const QSet<QString>& genericNames()
     return s;
 }
 
-// Subdomains of moonlightweb.top that are the project's own, not an instance's.
+// Subdomains of the project domain that are the project's own, not an instance's.
 const QSet<QString>& projectLabels()
 {
     static const QSet<QString> s{QStringLiteral("stream"), QStringLiteral("app"),
@@ -399,15 +399,6 @@ QString LogScrubber::scrubLine(QString line)
     // A client log's page path, when the page came through the rendezvous.
     static const QRegularExpression pagePath(QStringLiteral(R"(\bpage /[a-z0-9]{20,}\b)"));
     line.replace(pagePath, QStringLiteral("page /(link)"));
-    // The instance's own name under moonlightweb.top.
-    static const QRegularExpression subdomain =
-        re(R"(\b([a-z0-9][a-z0-9-]*)\.((?:dev\.)?moonlightweb\.top)\b)");
-    if (line.contains(QLatin1String("moonlightweb.top"), Qt::CaseInsensitive)) {
-        line = replaceEach(line, subdomain, [](const QRegularExpressionMatch& m) {
-            if (projectLabels().contains(m.captured(1).toLower())) return m.captured(0);
-            return QStringLiteral("instance.") + m.captured(2);
-        });
-    }
     static const QRegularExpression tailnet = re(R"(\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.ts\.net\b)");
     if (line.contains(QLatin1String(".ts.net"), Qt::CaseInsensitive)) {
         // "dualrtx.tail1234.ts.net": the machine's tag, and the tailnet's

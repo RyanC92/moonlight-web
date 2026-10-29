@@ -317,16 +317,16 @@ void run_log_scrubber_tests()
     // Links that open the instance; the project's own names stay.
     CHECK_EQ(
         s.scrubLine(
-            R"~([RDV] line up — "https://stream.moonlightweb.top/41zvnyqjdnybgwhw8f20martz4")~"),
-        QString(R"~([RDV] line up — "https://stream.moonlightweb.top/(link)")~"));
-    CHECK_EQ(s.scrubLine("  From the internet: https://stream.dev.moonlightweb.top/wwj7jmmpb"),
-             QString("  From the internet: https://stream.dev.moonlightweb.top/(link)"));
+            R"~([RDV] line up — "https://stream.example.com/41zvnyqjdnybgwhw8f20martz4")~"),
+        QString(R"~([RDV] line up — "https://stream.example.com/(link)")~"));
+    CHECK_EQ(s.scrubLine("  From the internet: https://stream.dev.example.com/wwj7jmmpb"),
+             QString("  From the internet: https://stream.dev.example.com/(link)"));
     CHECK_EQ(s.scrubLine("[k3j4 guest 2@192.168.1.20] page /p/Zx81-abcdefgh — Mozilla/5.0"),
              QString("[k3j4 guest 2@192.168.x.{a2}] page /p/(link) — Mozilla/5.0"));
     CHECK_EQ(s.scrubLine("[k3j4 owner@192.168.1.20] page /41zvnyqjdnybgwhw8f20martz4 — x"),
              QString("[k3j4 owner@192.168.x.{a2}] page /(link) — x"));
-    CHECK_EQ(s.scrubLine("SSL certificate loaded from source: CN=8f3b2aa.moonlightweb.top"),
-             QString("SSL certificate loaded from source: CN=instance.moonlightweb.top"));
+    CHECK_EQ(s.scrubLine("SSL certificate loaded from source: CN=8f3b2aa.example.com"),
+             QString("SSL certificate loaded from source: CN=instance.example.com"));
     CHECK_EQ(s.scrubLine("Untrusted Host 'dualrtx.tailbea5b3.ts.net' refused"),
              QString("Untrusted Host '{A}.tailnet.ts.net' refused"));
 

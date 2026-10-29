@@ -189,7 +189,7 @@ QString RendezvousClient::baseUrl()
         return url;
     }
     QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
+    if (domain.isEmpty()) return {};  // this fork is LAN-only by default
     return QStringLiteral("https://stream.") + domain;
 }
 

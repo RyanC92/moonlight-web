@@ -615,9 +615,9 @@ static const char* kCliInternetConsent =
     "machine's public IP address and when it is online. No public DNS record "
     "is created, no certificate is issued for this machine, and ports 80/443 "
     "are not opened. You can turn the link off at any time from the Admin "
-    "page. (An instance that already holds a moonlightweb.top sub-domain "
-    "keeps it, and its existing behaviour, until the announced shutdown of "
-    "the DNS service in February 2027.)";
+    "page. (An instance that already holds a sub-domain under the upstream project keeps it,
+    "and its existing behaviour, until the announced shutdown of the DNS service in 
+    "February 2027.)";
 
 // stdin is a terminal — i.e. there is a human who can answer a prompt.
 static bool stdinIsInteractive()
@@ -1721,9 +1721,9 @@ int main(int argc, char* argv[])
     // A LAN-only instance talks to no introduction server, staging included.
     if (devMode && !mw::edition::lanOnly() && qEnvironmentVariableIsEmpty("MW_DOMAIN") &&
         qEnvironmentVariableIsEmpty("MW_RENDEZVOUS_URL")) {
-        qputenv("MW_DOMAIN", "dev.moonlightweb.top");
-        Logger::info("[--dev] MW_DOMAIN defaulted to dev.moonlightweb.top (staging); set "
-                     "MW_DOMAIN=moonlightweb.top to target production");
+        // This fork is LAN-only by default; --dev mode does not contact any
+        // introduction server. MW_DOMAIN can be set explicitly if needed.
+        // (No default upstream domain is used.)
     }
     applyEmbeddedEnvDefaults();
     if (mw::edition::lanOnly())
@@ -3419,7 +3419,7 @@ int main(int argc, char* argv[])
                 << "videoEnhancement=" << reqVideoEnhancement;
 
         // Determine signaling host from the browser's Host header.
-        // Works for both LAN (localhost:443) and remote access via moonlightweb.top.
+        // Works for both LAN (localhost:443) and remote access via a custom domain.
         QString serverHost = req.headers.value("host");
         int colon = serverHost.indexOf(':');
         if (colon >= 0) serverHost = serverHost.left(colon);

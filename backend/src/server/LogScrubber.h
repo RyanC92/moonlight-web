@@ -52,7 +52,7 @@
  *     router share its public address;
  *   - the instance's name and the OS account by instance-name and user, the
  *     account in home paths (C:\Users\<name>, /home/<name>, /Users/<name>)
- *     too, and the instance's own moonlightweb.top subdomain by instance.
+ *     too, and the instance's own subdomain by instance.
  * Loopback, multicast and 0.0.0.0 stay: they are the same on every machine.
  *
  * A best effort over free text, not a guarantee: it knows the formats

@@ -114,14 +114,14 @@ describe('the version a machine announces', () => {
 
 describe('where the check is enforced', () => {
     it('refuses on the staging server, and lets the builds between releases through there', () => {
-        expect(interfacePolicy('stream.dev.moonlightweb.top')).toEqual({
+        expect(interfacePolicy('stream.dev.example.com')).toEqual({
             enforce: true,
             unreleasedAllowed: true,
         });
     });
 
     it('holds production to every release, refusing once it is switched over', () => {
-        expect(interfacePolicy('stream.moonlightweb.top')).toEqual({
+        expect(interfacePolicy('stream.example.com')).toEqual({
             enforce: PRODUCTION_ENFORCES,
             unreleasedAllowed: false,
         });

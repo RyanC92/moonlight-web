@@ -272,7 +272,7 @@ nc -zv mw.example.com 8443     # must fail
   helps; a TURN relay would need code.
 - **No accounts.** One owner, one PIN, one session list. Multi-user is a
   different project.
-- **No rendezvous.** `MW_LAN_ONLY=1` keeps the app off `moonlightweb.top`
+- **No rendezvous.** `MW_LAN_ONLY=1` keeps the app off upstream infrastructure
   entirely: no introduction server, no STUN, no UPnP, no update check and no
   metrics. Your domain is the entry point.
 - **The Cloudflare Tunnel path is verified; the home/CGNAT variant is not.** The

@@ -947,11 +947,12 @@ QString AppSettings::stunServer() const
     // Google. StunClient::defaultServers() keeps the public servers behind it
     // for the backend's own detection; a browser gets one server and a direct
     // connection it can fall back to.
-    QString domain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (domain.isEmpty()) domain = QStringLiteral("moonlightweb.top");
-    return QStringLiteral("stun:stream.") + domain + QStringLiteral(":3478");
+    // This fork is LAN-only by default and does not contact any upstream
+    // STUN server. When an operator enables Internet Access, they set
+    // their own STUN server via settings.json (stun_server). Fall back
+    // to a widely-available public STUN server rather than the upstream project.
+    return QStringLiteral("stun:stun.l.google.com:19302");
 }
-
 void AppSettings::setStunServer(const QString& url)
 {
     QJsonObject obj = readAll();
@@ -1147,7 +1148,7 @@ QString AppSettings::domain() const
     // The name a pre-0.3 install would have registered under the retired DNS
     // mechanism. Computed only to be excluded below — nothing points at it.
     QString baseDomain = QString::fromUtf8(qgetenv("MW_DOMAIN"));
-    if (baseDomain.isEmpty()) baseDomain = QStringLiteral("moonlightweb.top");
+    if (baseDomain.isEmpty()) return {};  // this fork does not use the retired DNS mechanism
 
     const QString uid = uniqueId();
     const QString retired = uid.isEmpty() ? baseDomain : (uid + QLatin1Char('.') + baseDomain);
