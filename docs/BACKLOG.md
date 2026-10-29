@@ -52,7 +52,7 @@ Open question to settle before implementing: does this fork keep Internet
 Access at all? If it stays LAN-only, the rendezvous/metrics/update paths can be
 deleted outright rather than re-pointed.
 
-## 4. Admin page opens without a password (by design, but misleading)
+## 4. Admin page opens without a password (by design, but misleading) ✅ DONE
 
 Found during testing, 2026-10-28. Verified with a PIN-authenticated session from
 a non-loopback address (172.21.0.7, via the test proxy):
@@ -134,7 +134,7 @@ Still open, deliberately not changed: writes require **three** things (session,
 promoted session, `x-mw-admin-key`). That is the intended model and the UI now
 supplies all three after an unlock.
 
-## 5. Virtual display: use ViBeShine's adapter instead of MttVDD?
+## 5. Virtual display: use ViBeShine's adapter instead of MttVDD? ✅ DONE (keep MttVDD)
 
 Investigated 2026-10-28. **Verdict: no — keep the bundled MttVDD.** ViBeShine's
 "virtual display adapter" is not a driver we can point at from a setting; it is a
