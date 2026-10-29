@@ -10,10 +10,10 @@
 #
 # What the user will eventually type is
 #
-#     curl -fsSL https://moonlightweb.top/install.sh | bash
+#     curl -fsSL https://example.com/install.sh | bash
 #
 # and on Linux that reaches for two things this repository only produces at
-# release time: the signed apt/dnf repository on packages.moonlightweb.top
+# release time: the signed apt/dnf repository on packages.example.com
 # (the `linux-repo` job is gated on refs/tags, and deploy-packages.sh ships
 # its output by hand) and, for the fallback, a published release. So there is
 # nothing to install from until the moment it is too late to find out that the
@@ -24,7 +24,7 @@
 #   1. downloads moonlightweb-linux-x64-* from the run (gh)
 #   2. runs make-repo.sh over the .deb and .rpm — the same script the release
 #      workflow runs — signed with a throwaway key generated on the spot, and
-#      pointed at http://repo instead of packages.moonlightweb.top (MW_BASEURL)
+#      pointed at http://repo instead of packages.example.com (MW_BASEURL)
 #   3. serves that tree, plus website/install.sh, from an nginx container
 #   4. drops you into a fresh distro container that pipes the served install.sh
 #      into bash exactly as a user would, with MW_PACKAGES pointing at the
@@ -36,7 +36,7 @@
 # Notes
 #   * Answering "Yes" to the Internet Access question records a *real* consent
 #     and lets the instance ask the container's gateway for UPnP mappings (a
-#     legacy upgrade would also re-register its moonlightweb.top sub-domain —
+#     legacy upgrade would also re-register its example.com sub-domain —
 #     the CI binaries still carry the production DNS credentials for those).
 #     Answer No, or export MW_INTERNET=0, unless that is what you are testing.
 #   * No ports are published: nothing on your LAN reaches the container, and
@@ -189,7 +189,7 @@ if command -v apt-get > /dev/null; then
 elif command -v dnf > /dev/null; then
     dnf install -y -q curl > /dev/null
 fi
-printf '\n\033[1m$ curl -fsSL https://moonlightweb.top/install.sh | bash\033[0m\n'
+printf '\n\033[1m$ curl -fsSL https://example.com/install.sh | bash\033[0m\n'
 curl -fsSL http://repo/install.sh | MW_PACKAGES=http://repo bash || printf '\n\033[31minstall.sh exited %s\033[0m\n' "$?"
 printf '\n\033[2mShell in the test container. `exit` tears everything down.\033[0m\n'
 exec "$(command -v bash || command -v sh)"

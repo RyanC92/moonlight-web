@@ -248,7 +248,7 @@ fi
 # either one finds the other's files in place. The key comes from the package,
 # not the network. Empty in the DEV edition, which is not in the repository.
 REPO_KEYS=/opt/moonlightweb/share/keys
-REPO_URL=https://packages.moonlightweb.top
+REPO_URL=https://packages.example.com
 if [ -n "$REPO_KEYS" ] && [ -d "$REPO_KEYS" ]; then
     if command -v apt-get >/dev/null 2>&1 && [ -d /etc/apt/sources.list.d ]; then
         if [ ! -s /etc/apt/sources.list.d/moonlightweb.sources ]; then
@@ -552,7 +552,7 @@ rpm_depends=(
 common=(
     -s dir -n "$NAME" -v "$VERSION"
     --license GPL-3.0 --vendor MoonlightWeb
-    --url "https://moonlightweb.top/"
+    --url "https://example.com/"
     --description "Stream your gaming PC to any device with a browser (self-contained, bundled Qt runtime)"
     --maintainer "MoonlightWeb"
     --after-install "$ROOT/postinst.sh"

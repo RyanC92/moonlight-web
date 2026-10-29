@@ -28,7 +28,7 @@ cask "moonlightweb" do
       verified: "github.com/linckosz/moonlight-web/"
   name "MoonlightWeb"
   desc "Stream your gaming PC to any device with a browser"
-  homepage "https://moonlightweb.top/"
+  homepage "https://example.com/"
 
   livecheck do
     url :url

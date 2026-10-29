@@ -43,7 +43,7 @@ ORIGIN=moonlightweb
 # The URL the generated .sources/.repo point back at. Overridable so the very
 # same repository can be built against a local http server and installed from
 # there before anything is published — see try-install.sh in this directory.
-BASEURL=${MW_BASEURL:-https://packages.moonlightweb.top}
+BASEURL=${MW_BASEURL:-https://packages.example.com}
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -68,7 +68,7 @@ rpmsign --key-id="$KEY" \
 # ── DEP-11: the software-centre index ───────────────────────────────────────
 # Compiled from /usr/share/metainfo + the icon inside the package, so the
 # listing can never drift from what actually gets installed. --no-net keeps the
-# screenshot URLs as absolute links to moonlightweb.top instead of trying to
+# screenshot URLs as absolute links to example.com instead of trying to
 # mirror the images into the repository.
 dpkg-deb -x "$POOL/$(basename "$DEB")" "$WORK/unpack"
 appstreamcli compose \
@@ -192,7 +192,7 @@ cat > "$SITE/index.html" <<EOF
 </style>
 <h1>MoonlightWeb package repository</h1>
 <p>Signed APT and DNF repositories for
-   <a href="https://moonlightweb.top/">MoonlightWeb</a> — currently
+   <a href="https://example.com/">MoonlightWeb</a> — currently
    <strong>$VERSION</strong>. Installing from here means the system updater keeps
    the app up to date, and it shows up in your software centre.</p>
 
@@ -210,7 +210,7 @@ sudo dnf install moonlightweb</code></pre>
 <p>Arch and derivatives: <code>moonlightweb-bin</code> on the AUR. Immutable
    distros (SteamOS, Bazzite): the AppImage from the
    <a href="https://github.com/linckosz/moonlight-web/releases">releases page</a>.
-   Or run <code>curl -fsSL https://moonlightweb.top/install.sh | bash</code>,
+   Or run <code>curl -fsSL https://example.com/install.sh | bash</code>,
    which picks the right one for you.</p>
 EOF
 

@@ -10,7 +10,7 @@
 -->
 <policyconfig>
   <vendor>MoonlightWeb</vendor>
-  <vendor_url>https://moonlightweb.top/</vendor_url>
+  <vendor_url>https://example.com/</vendor_url>
   <action id="top.moonlightweb.update">
     <description>Update MoonlightWeb</description>
     <message>Authentication is required to update MoonlightWeb</message>

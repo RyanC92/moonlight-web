@@ -24,7 +24,7 @@ pkgver=@MW_VERSION@
 pkgrel=1
 pkgdesc="Stream your gaming PC to any device with a browser"
 arch=('x86_64')
-url="https://moonlightweb.top/"
+url="https://example.com/"
 license=('GPL-3.0-only')
 
 # Qt and OpenSSL are bundled inside /opt/moonlightweb (linuxdeploy rewrote the

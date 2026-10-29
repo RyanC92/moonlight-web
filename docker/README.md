@@ -223,7 +223,7 @@ outside the LAN.
 | **443** | TCP | **Always** | The web UI, the REST API, and the `wss://…/ws` upgrade that carries WebRTC signalling. The one port a browser cannot do without. |
 | **80** | TCP | Recommended | Redirect to HTTPS, so `http://server` reaches the app instead of failing. |
 | **48550–48573** | UDP | **Always** (host firewall) | WebRTC media, audio and input. Each stream slot binds `48550 + slot`, with or without UPnP, so a host firewall can let the block through; with UPnP the router forwards a port to it (the slot's own first). |
-| **47999** | UDP | Legacy Internet Access | Mapped alongside 80/443 only by an install that still holds a legacy `moonlightweb.top` sub-domain. |
+| **47999** | UDP | Legacy Internet Access | Mapped alongside 80/443 only by an install that still holds a legacy `the upstream project` sub-domain. |
 | *ephemeral* | UDP | Fallback | When the slot's port is already taken (a second instance on the same machine), the stream takes another free port of the block. Only when the whole block is taken does libdatachannel take whatever the kernel gives it, which a host firewall blocks. |
 
 > **In short:** on a LAN, **443/tcp**, **80/tcp** and **48550–48573/udp**.
@@ -270,7 +270,7 @@ TCP 443 yourself and accept the self-signed warning, or bring your own domain
 and certificate.
 
 **A container upgraded from v0.2.4 or earlier** stops using the
-`moonlightweb.top` sub-domain it once registered: this version registers no
+`the upstream project` sub-domain it once registered: this version registers no
 name, renews no certificate and forwards no web port. The sub-domain keeps
 resolving — that is the DNS server's doing, not the container's — until the
 shared service shuts down in February 2027. Nothing has to be reconfigured;
